@@ -1,0 +1,710 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead-webhook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Webhook Entrada",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        7264,
+        2864
+      ],
+      "id": "385fb2a7-4452-48e1-901c-9ae0b4378809",
+      "webhookId": "bd21ec3b-62f4-417d-b06c-650f1e6645ec"
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "AMBIENTE",
+              "value": "teste"
+            },
+            {
+              "name": "IA_MODE",
+              "value": "mock"
+            },
+            {
+              "name": "telefone",
+              "value": "={{ $json.body?.telefone || $json.telefone || $json.body?.from || $json.from }}"
+            },
+            {
+              "name": "mensagem",
+              "value": "={{ $json.body?.mensagem || $json.mensagem || $json.body?.text || $json.text }}"
+            },
+            {
+              "name": "nome",
+              "value": "={{ $json.body?.nome || $json.nome || $json.body?.senderName || $json.senderName }}"
+            },
+            {
+              "name": "WHATSAPP_API_URL",
+              "value": "https://httpbin.org"
+            },
+            {
+              "name": "WHATSAPP_API_TOKEN",
+              "value": "preencher_depois"
+            },
+            {
+              "name": "WHATSAPP_INSTANCE",
+              "value": "adao-imoveis"
+            },
+            {
+              "name": "GERENTE_TELEFONE",
+              "value": "55XXXXXXXXXXX"
+            },
+            {
+              "name": "WHATSAPP_ENDPOINT",
+              "value": "/post"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Normalizar Payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        7472,
+        2864
+      ],
+      "id": "d245aa11-ea30-47b5-9d8e-795767c82127"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "leads",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "telefone",
+              "condition": "eq",
+              "keyValue": "={{$json.telefone}}"
+            }
+          ]
+        }
+      },
+      "name": "Consultar Lead",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        7664,
+        2864
+      ],
+      "alwaysOutputData": true,
+      "id": "79499355-08af-4e99-b1a5-d3af665ea08c",
+      "credentials": {
+        "supabaseApi": {
+          "id": "AjQn4Bt0kqa263Wc",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.id}}",
+              "operation": "isEmpty"
+            }
+          ]
+        }
+      },
+      "name": "Novo Lead?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        7872,
+        2864
+      ],
+      "id": "30bf55e9-6a07-47af-8828-ee360f6af59d"
+    },
+    {
+      "parameters": {
+        "tableId": "leads",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "telefone",
+              "fieldValue": "={{ $('Normalizar Payload').first().json.telefone }}"
+            },
+            {
+              "fieldId": "nome",
+              "fieldValue": "={{ $('Normalizar Payload').first().json.nome }}"
+            },
+            {
+              "fieldId": "historico_mensagens",
+              "fieldValue": "=[]"
+            }
+          ]
+        }
+      },
+      "name": "Criar Novo Lead",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        8064,
+        2736
+      ],
+      "id": "b1c607e2-e021-4420-b151-152cfdf2714d",
+      "credentials": {
+        "supabaseApi": {
+          "id": "AjQn4Bt0kqa263Wc",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "name": "Juntar Fluxos",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        8272,
+        2864
+      ],
+      "id": "f2523eae-02e2-4ec4-ad96-03a0db334f47"
+    },
+    {
+      "parameters": {
+        "jsCode": "let payload = $('Normalizar Payload').first().json;\nlet lead = $json;\n\nif (!lead || !lead.telefone) {\n  lead = { telefone: payload.telefone, historico_mensagens: [] };\n}\n\nlet historico = lead.historico_mensagens || [];\nif (typeof historico === 'string') {\n  try { historico = JSON.parse(historico); } catch(e) { historico = []; }\n}\n\nlet historyText = historico.map(msg => `${msg.role === 'user' ? 'Cliente' : 'SDR'}: ${msg.content}`).join(\"\\n\");\nif (!historyText) historyText = \"Nenhuma interação anterior.\";\n\nlet missingFields = [];\nif (!lead.regiao_interesse) missingFields.push(\"regiao_interesse\");\nif (!lead.tipo_imovel) missingFields.push(\"tipo_imovel\");\nif (!lead.renda_mensal) missingFields.push(\"renda_mensal\");\nif (!lead.valor_entrada) missingFields.push(\"valor_entrada\");\nif (!lead.prazo_compra) missingFields.push(\"prazo_compra\");\n\nreturn {\n  telefone: payload.telefone,\n  lead_id: lead.id,\n  nome: lead.nome || payload.nome,\n  mensagem_atual: payload.mensagem,\n  historico_texto: historyText,\n  historico_array: historico,\n  status_atual: lead.status_funil || 'frio',\n  campos_faltantes: missingFields.join(\", \"),\n  lead_completo: lead\n};\n"
+      },
+      "name": "Preparar Contexto IA",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        8464,
+        2864
+      ],
+      "id": "09f8aa5c-f9f9-4c35-b5ba-c617821001f8"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $('Normalizar Payload').first().json.IA_MODE }}",
+              "value2": "mock"
+            }
+          ]
+        }
+      },
+      "name": "Usar Mock IA?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        8672,
+        2864
+      ],
+      "notesInFlow": true,
+      "id": "0af1956c-8b5f-4598-a579-c87549633d36",
+      "notes": "Mude para FALSE para usar a OpenAI real"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Normalizar Texto\nconst normalize = (text) => {\n  if (!text) return \"\";\n  return text.toLowerCase()\n    .normalize('NFD')\n    .replace(/[\\u0300-\\u036f]/g, '');\n};\n\nconst payload = $('Normalizar Payload').first().json;\nconst mensagemOriginal = payload.mensagem || \"\";\nconst msg = normalize(mensagemOriginal);\n\nlet score = 0;\nlet dadosExtraidos = {\n  orcamento: null,\n  prazo_compra: null,\n  urgencia: \"baixa\",\n  forma_pagamento: null,\n  produto_interesse: null\n};\n\n// 1. Detectar Valores Monetários (Regex)\nconst moneyRegex = /(?:r\\$|rs|\\$)?\\s?(\\d+(?:[.,]\\d+)*)\\s?(mil|k|milhoes|m)?/gi;\nconst matchMoney = moneyRegex.exec(msg);\nif (matchMoney) {\n    let valorStr = matchMoney[1];\n    // Se tiver ponto e vírgula, assume formato BR (ponto milhar, vírgula decimal)\n    if (valorStr.includes('.') && valorStr.includes(',')) {\n        valorStr = valorStr.replace(/\\./g, '').replace(',', '.');\n    } else if (valorStr.includes(',')) {\n        valorStr = valorStr.replace(',', '.');\n    } else if (valorStr.includes('.') && valorStr.length > 3 && valorStr.split('.').pop().length === 3) {\n        // Provável ponto de milhar (ex: 50.000)\n        valorStr = valorStr.replace(/\\./g, '');\n    }\n    \n    let valor = parseFloat(valorStr);\n    let sufixo = matchMoney[2] ? matchMoney[2].toLowerCase() : '';\n    if (sufixo === 'mil' || sufixo === 'k') valor *= 1000;\n    if (sufixo === 'milhoes' || sufixo === 'm') valor *= 1000000;\n    dadosExtraidos.orcamento = valor;\n    score += 20; // Regra 2\n} else if (msg.match(/tenho|possuo|disponho|orcamento|investir|entrada/)) {\n    score += 20; // Regra 2 (Palavra-chave apenas)\n}\n\n// 2. Necessidade clara / Produto\nif (msg.match(/comprar|adquirir|contratar|fechar|agendar|apartamento|casa|imovel|unidade/)) {\n    score += 20; // Regra 3\n    if (msg.includes('apartamento')) dadosExtraidos.produto_interesse = 'Apartamento';\n    if (msg.includes('casa')) dadosExtraidos.produto_interesse = 'Casa';\n}\n\n// 3. Prazo / Urgência\nif (msg.match(/hoje|agora|urgente|esta semana|este mes|imediatamente/)) {\n    score += 20; // Regra 4\n    dadosExtraidos.urgencia = \"alta\";\n    if (msg.includes('mes')) dadosExtraidos.prazo_compra = \"Este mês\";\n    if (msg.includes('semana')) dadosExtraidos.prazo_compra = \"Esta semana\";\n}\n\n// 4. Forma de Pagamento\nif (msg.match(/financiado|financiamento|a vista|consorcio/)) {\n    score += 20; // Regra 5\n    if (msg.includes('financiamento')) dadosExtraidos.forma_pagamento = \"Financiamento\";\n    if (msg.includes('a vista')) dadosExtraidos.forma_pagamento = \"À vista\";\n}\n\n// 5. Interesse Alto\nif (msg.match(/quero comprar|tenho interesse|quero agendar/)) {\n    score += 20; // Regra 6\n}\n\nscore = Math.min(score, 100);\n\n// Atribuição de Temperatura e Status\nlet temperatura = \"Frio\";\nlet status_funil = \"Novo\";\n\nif (score >= 90) {\n    temperatura = \"Pronto para Vendas\";\n    status_funil = \"Pronto para Vendas\";\n} else if (score >= 70) {\n    temperatura = \"Quente\";\n    status_funil = \"Quente\";\n} else if (score >= 40) {\n    temperatura = \"Morno\";\n    status_funil = \"Morno\";\n} else if (score > 0) {\n    temperatura = \"Frio\";\n    status_funil = \"Coletando Informações\";\n}\n\nconst encaminhar = (score >= 80 && (temperatura === \"Quente\" || temperatura === \"Pronto para Vendas\"));\n\n// Respostas Pré-definidas\nlet resposta = \"Olá! Será um prazer ajudar. Pode me contar um pouco mais sobre o que você está procurando?\";\nif (status_funil === \"Coletando Informações\" || status_funil === \"Morno\") {\n    resposta = \"Perfeito. Para entender melhor o seu perfil, poderia informar sua faixa de investimento e em quanto tempo pretende tomar a decisão?\";\n} else if (status_funil === \"Quente\") {\n    resposta = \"Excelente. Com base nas informações fornecidas, seu perfil está alinhado. Vou encaminhar seus dados para um consultor especializado.\";\n} else if (status_funil === \"Pronto para Vendas\") {\n    resposta = \"Ótimo! Seu interesse foi identificado como prioritário e seu atendimento será encaminhado ao consultor responsável.\";\n}\n\n// Resumo SDR\nlet resumo = `Lead interessado em ${dadosExtraidos.produto_interesse || 'imóvel'}.`;\nif (dadosExtraidos.orcamento) resumo += ` Orçamento: R$ ${dadosExtraidos.orcamento.toLocaleString('pt-BR')}.`;\nif (dadosExtraidos.prazo_compra) resumo += ` Prazo: ${dadosExtraidos.prazo_compra}.`;\nif (dadosExtraidos.urgencia === \"alta\") resumo += ` Demonstra forte intenção e urgência.`;\n\nconst mockJson = {\n    resposta_para_usuario: resposta,\n    score_qualificacao: score,\n    temperatura: temperatura,\n    status_funil: status_funil,\n    encaminhar_para_consultor: encaminhar,\n    resumo_sdr: resumo,\n    dados_extraidos: dadosExtraidos\n};\n\nreturn {\n  message: {\n    content: JSON.stringify(mockJson, null, 2)\n  }\n};"
+      },
+      "name": "Mock IA",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        8864,
+        2736
+      ],
+      "id": "5e4d3795-7b0f-4c92-9139-c82e36f773be"
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "operation": "create",
+        "requestOptions": {}
+      },
+      "name": "OpenAI - Extrair JSON",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        8864,
+        2976
+      ],
+      "id": "8fbd3827-7119-48da-92c2-23f915fe6aae"
+    },
+    {
+      "parameters": {
+        "jsCode": "let responseText = $json.message.content;\nlet parsed = {};\ntry {\n  let cleaned = responseText.replace(/```json/g, \"\").replace(/```/g, \"\").trim();\n  parsed = JSON.parse(cleaned);\n} catch(e) {\n  parsed = { \n    resposta_para_usuario: responseText, \n    dados_extraidos: {}, \n    status_funil: \"qualificando\", \n    deve_encaminhar_gerente: false,\n    score_qualificacao: 0,\n    temperatura: \"Frio\",\n    resumo_sdr: \"\"\n  };\n}\n\nlet context = $('Preparar Contexto IA').first().json;\nlet historico = context.historico_array || [];\n\n// Adiciona as novas mensagens ao histórico\nhistorico.push({ role: \"user\", content: context.mensagem_atual });\nhistorico.push({ role: \"assistant\", content: parsed.resposta_para_usuario });\n\nlet updateData = Object.assign({}, context.lead_completo);\nupdateData.historico_mensagens = historico;\nupdateData.status_funil = parsed.status_funil || updateData.status_funil;\nupdateData.score_qualificacao = parsed.score_qualificacao || 0;\nupdateData.temperatura = parsed.temperatura || 'Frio';\nupdateData.encaminhar_para_consultor = parsed.encaminhar_para_consultor || false;\nupdateData.resumo_sdr = parsed.resumo_sdr || \"\";\n\nif (parsed.dados_extraidos) {\n  if (parsed.dados_extraidos.regiao_interesse) updateData.regiao_interesse = parsed.dados_extraidos.regiao_interesse;\n  if (parsed.dados_extraidos.tipo_imovel) updateData.tipo_imovel = parsed.dados_extraidos.tipo_imovel;\n  if (parsed.dados_extraidos.renda_mensal) updateData.renda_mensal = parsed.dados_extraidos.renda_mensal;\n  if (parsed.dados_extraidos.valor_entrada) updateData.valor_entrada = parsed.dados_extraidos.valor_entrada;\n  if (parsed.dados_extraidos.prazo_compra) updateData.prazo_compra = parsed.dados_extraidos.prazo_compra;\n  if (parsed.dados_extraidos.orcamento) updateData.valor_entrada = parsed.dados_extraidos.orcamento.toString();\n}\n\nreturn {\n  id: context.lead_id,\n  telefone: context.telefone,\n  lead_id: context.lead_id,\n  ia_mode: $('Normalizar Payload').first().json.IA_MODE,\n  resposta_para_usuario: parsed.resposta_para_usuario,\n  deve_encaminhar_gerente: parsed.encaminhar_para_consultor, // Mapeado para o novo critério\n  updateData: updateData\n};"
+      },
+      "name": "Processar Resposta JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        9072,
+        2864
+      ],
+      "id": "edd731af-ea94-4409-b35c-b4ba3386e97b"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "leads",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "historico_mensagens",
+              "fieldValue": "={{$json.updateData.historico_mensagens}}"
+            },
+            {
+              "fieldId": "status_funil",
+              "fieldValue": "={{$json.updateData.status_funil}}"
+            },
+            {
+              "fieldId": "regiao_interesse",
+              "fieldValue": "={{$json.updateData.regiao_interesse}}"
+            },
+            {
+              "fieldId": "tipo_imovel",
+              "fieldValue": "={{$json.updateData.tipo_imovel}}"
+            },
+            {
+              "fieldId": "renda_mensal",
+              "fieldValue": "={{$json.updateData.renda_mensal}}"
+            },
+            {
+              "fieldId": "valor_entrada",
+              "fieldValue": "={{$json.updateData.valor_entrada}}"
+            },
+            {
+              "fieldId": "prazo_compra",
+              "fieldValue": "={{$json.updateData.prazo_compra}}"
+            },
+            {
+              "fieldId": "interesse_financiamento",
+              "fieldValue": "={{$json.updateData.interesse_financiamento}}"
+            },
+            {
+              "fieldId": "score_qualificacao",
+              "fieldValue": "={{$json.updateData.score_qualificacao}}"
+            },
+            {
+              "fieldId": "temperatura",
+              "fieldValue": "={{$json.updateData.temperatura}}"
+            },
+            {
+              "fieldId": "encaminhar_para_consultor",
+              "fieldValue": "={{$json.updateData.encaminhar_para_consultor}}"
+            },
+            {
+              "fieldId": "resumo_sdr",
+              "fieldValue": "={{$json.updateData.resumo_sdr}}"
+            }
+          ]
+        }
+      },
+      "name": "Atualizar Lead (Supabase)",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        9264,
+        2864
+      ],
+      "alwaysOutputData": true,
+      "id": "02fb6f8f-877a-40da-9d79-fe8382c4a82f",
+      "credentials": {
+        "supabaseApi": {
+          "id": "AjQn4Bt0kqa263Wc",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $('Processar Resposta JSON').first().json.updateData.score_qualificacao }}",
+              "operation": "largerEqual",
+              "value2": 80
+            },
+            {
+              "value1": "={{ $('Processar Resposta JSON').first().json.deve_encaminhar_gerente }}",
+              "value2": true
+            }
+          ]
+        },
+        "combineOperation": "any"
+      },
+      "name": "Precisa de Gerente?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        10072,
+        2864
+      ],
+      "id": "cd0a530d-d8c9-4c2d-9cbf-43f74a7448cd"
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "mensagem_para_cliente",
+              "value": "={{ $json.mensagem_para_cliente }}"
+            },
+            {
+              "name": "alerta_gerente",
+              "value": "={{ $json.alerta_gerente }}"
+            },
+            {
+              "name": "debug_ia_usada",
+              "value": "={{ $json.debug_ia_usada }}"
+            },
+            {
+              "name": "debug_status_funil",
+              "value": "={{ $json.debug_status_funil }}"
+            },
+            {
+              "name": "mock_whatsapp_gerente",
+              "value": "=🚨 NOVO LEAD QUALIFICADO\n\nNome: {{ $('Atualizar Lead (Supabase)').first().json.nome }}\nTelefone: {{ $('Atualizar Lead (Supabase)').first().json.telefone }}\n\nRegião: {{ $('Atualizar Lead (Supabase)').first().json.regiao_interesse }}\nRenda: {{ $('Atualizar Lead (Supabase)').first().json.renda_mensal }}\nEntrada: {{ $('Atualizar Lead (Supabase)').first().json.valor_entrada }}\n\nStatus: {{ $('Atualizar Lead (Supabase)').first().json.status_funil }}\n\nÚltima mensagem:\n\"{{ $('Normalizar Payload').first().json.mensagem }}\""
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Notificar Gerente (Mock)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        10280,
+        2848
+      ],
+      "id": "358e27e2-7b02-4138-b4e3-5f09838c556f"
+    },
+    {
+      "parameters": {},
+      "name": "Bypass (Sem Alerta)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        10280,
+        3056
+      ],
+      "id": "a59878b5-fb1c-440c-93fb-dfab6c22b1e1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const ambiente = $('Normalizar Payload').first().json.AMBIENTE || 'producao';\nconst resposta = $('Processar Resposta JSON').first().json.resposta_para_usuario;\nconst status_funil = $('Atualizar Lead (Supabase)').first().json.status_funil;\nconst ia_mode = $('Normalizar Payload').first().json.IA_MODE;\n\nlet result = {\n  resposta_para_usuario: resposta,\n  status: status_funil\n};\n\nif (ambiente === 'teste') {\n  result.debug_ia_usada = ia_mode;\n  result.debug_status_funil = status_funil;\n}\n\nreturn result;"
+      },
+      "name": "Preparar Resposta Cliente",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        9472,
+        2864
+      ],
+      "id": "00bbceaf-4d8b-4226-ad2f-14e9592efb84"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        9680,
+        2864
+      ],
+      "id": "118a1e70-a4c2-4133-a0b0-7a3e87d8ba1b"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Normalizar Payload').first().json.WHATSAPP_API_URL }}{{ $('Normalizar Payload').first().json.WHATSAPP_ENDPOINT }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $('Normalizar Payload').first().json.WHATSAPP_API_TOKEN }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $('Normalizar Payload').first().json.telefone }}\",\n  \"options\": {\n    \"delay\": 1200,\n    \"presence\": \"composing\"\n  },\n  \"textMessage\": {\n    \"text\": {{ JSON.stringify($('Preparar Resposta Cliente').first().json.resposta_para_usuario) }}\n  }\n}",
+        "options": {}
+      },
+      "id": "f06af113-d22e-4bd8-8a8c-748e55ad4d04",
+      "name": "Enviar WhatsApp Cliente",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        4048,
+        1088
+      ],
+      "continueOnFail": true,
+      "notesInFlow": true,
+      "notes": "Tratamento de Erro ativado (Continue On Fail)"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Normalizar Payload').first().json.WHATSAPP_API_URL }}{{ $('Normalizar Payload').first().json.WHATSAPP_ENDPOINT }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $('Normalizar Payload').first().json.WHATSAPP_API_TOKEN }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $('Normalizar Payload').first().json.GERENTE_TELEFONE }}\",\n  \"options\": {\n    \"delay\": 1200,\n    \"presence\": \"composing\"\n  },\n  \"textMessage\": {\n    \"text\": {{ JSON.stringify($('Notificar Gerente (Mock)').first().json.mock_whatsapp_gerente) }}\n  }\n}",
+        "options": {}
+      },
+      "id": "31f72fd2-fb68-4a2b-8344-53327b3ca6c9",
+      "name": "Enviar WhatsApp Gerente",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        4448,
+        1184
+      ],
+      "continueOnFail": true,
+      "notesInFlow": true,
+      "notes": "Tratamento de Erro ativado (Continue On Fail)"
+    }
+  ],
+  "connections": {
+    "Webhook Entrada": {
+      "main": [
+        [
+          {
+            "node": "Normalizar Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar Payload": {
+      "main": [
+        [
+          {
+            "node": "Consultar Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar Lead": {
+      "main": [
+        [
+          {
+            "node": "Novo Lead?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Novo Lead?": {
+      "main": [
+        [
+          {
+            "node": "Criar Novo Lead",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Juntar Fluxos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Criar Novo Lead": {
+      "main": [
+        [
+          {
+            "node": "Juntar Fluxos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Juntar Fluxos": {
+      "main": [
+        [
+          {
+            "node": "Preparar Contexto IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Contexto IA": {
+      "main": [
+        [
+          {
+            "node": "Usar Mock IA?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Usar Mock IA?": {
+      "main": [
+        [
+          {
+            "node": "Mock IA",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "OpenAI - Extrair JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mock IA": {
+      "main": [
+        [
+          {
+            "node": "Processar Resposta JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI - Extrair JSON": {
+      "main": [
+        [
+          {
+            "node": "Processar Resposta JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Processar Resposta JSON": {
+      "main": [
+        [
+          {
+            "node": "Atualizar Lead (Supabase)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atualizar Lead (Supabase)": {
+      "main": [
+        [
+          {
+            "node": "Preparar Resposta Cliente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Precisa de Gerente?": {
+      "main": [
+        [
+          {
+            "node": "Notificar Gerente (Mock)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Bypass (Sem Alerta)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Resposta Cliente": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Webhook": {
+      "main": [
+        [
+          {
+            "node": "Enviar WhatsApp Cliente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar WhatsApp Cliente": {
+      "main": [
+        [
+          {
+            "node": "Precisa de Gerente?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notificar Gerente (Mock)": {
+      "main": [
+        [
+          {
+            "node": "Enviar WhatsApp Gerente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b655effe6a605d97452e67459fb80aa090393b45d49bbb337b79cc6062550bb4"
+  }
+}

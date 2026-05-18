@@ -1,0 +1,132 @@
+{
+  "name": "SDR Adão Imóveis - Etapa 2",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead-webhook",
+        "options": {}
+      },
+      "name": "Webhook Entrada",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [ 200, 300 ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            { "name": "telefone", "value": "={{$json.body.telefone || $json.body.from}}" },
+            { "name": "mensagem", "value": "={{$json.body.mensagem || $json.body.text}}" },
+            { "name": "nome", "value": "={{$json.body.nome || $json.body.senderName}}" }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Normalizar Payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [ 400, 300 ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "leads",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "telefone",
+              "condition": "eq",
+              "keyValue": "={{$json.telefone}}"
+            }
+          ]
+        }
+      },
+      "name": "Consultar Lead",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [ 600, 300 ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{$input.all().length}}",
+              "operation": "equal",
+              "value2": 0
+            }
+          ]
+        }
+      },
+      "name": "Novo Lead?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [ 800, 300 ]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "tableId": "leads",
+        "fieldsUi": {
+          "fieldValues": [
+            { "fieldId": "telefone", "fieldValue": "={{$node[\"Normalizar Payload\"].json.telefone}}" },
+            { "fieldId": "nome", "fieldValue": "={{$node[\"Normalizar Payload\"].json.nome}}" },
+            { "fieldId": "historico_mensagens", "fieldValue": "=[{\"role\": \"user\", \"content\": \"{{$node['Normalizar Payload'].json.mensagem}}\"}]" }
+          ]
+        }
+      },
+      "name": "Criar Novo Lead",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [ 1000, 180 ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            { "name": "status", "value": "sucesso" },
+            { "name": "mensagem_recebida", "value": "={{$node[\"Normalizar Payload\"].json.mensagem}}" },
+            { "name": "resposta_simulada", "value": "Olá! Recebemos sua mensagem. Em breve um consultor responderá." }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Resposta Simulada",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [ 1200, 300 ]
+    }
+  ],
+  "connections": {
+    "Webhook Entrada": {
+      "main": [
+        [ { "node": "Normalizar Payload", "type": "main", "index": 0 } ]
+      ]
+    },
+    "Normalizar Payload": {
+      "main": [
+        [ { "node": "Consultar Lead", "type": "main", "index": 0 } ]
+      ]
+    },
+    "Consultar Lead": {
+      "main": [
+        [ { "node": "Novo Lead?", "type": "main", "index": 0 } ]
+      ]
+    },
+    "Novo Lead?": {
+      "main": [
+        [ { "node": "Criar Novo Lead", "type": "main", "index": 0 } ],
+        [ { "node": "Resposta Simulada", "type": "main", "index": 0 } ]
+      ]
+    },
+    "Criar Novo Lead": {
+      "main": [
+        [ { "node": "Resposta Simulada", "type": "main", "index": 0 } ]
+      ]
+    }
+  }
+}

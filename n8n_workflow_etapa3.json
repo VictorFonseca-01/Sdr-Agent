@@ -1,0 +1,162 @@
+{
+  "name": "SDR Adão Imóveis - Etapa 3",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead-webhook",
+        "options": {}
+      },
+      "name": "Webhook Entrada",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [ 0, 300 ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            { "name": "telefone", "value": "={{$json.body.telefone || $json.body.from}}" },
+            { "name": "mensagem", "value": "={{$json.body.mensagem || $json.body.text}}" },
+            { "name": "nome", "value": "={{$json.body.nome || $json.body.senderName}}" }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Normalizar Payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [ 200, 300 ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "leads",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "telefone",
+              "condition": "eq",
+              "keyValue": "={{$json.telefone}}"
+            }
+          ]
+        }
+      },
+      "name": "Consultar Lead",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [ 400, 300 ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{$input.all().length}}",
+              "operation": "equal",
+              "value2": 0
+            }
+          ]
+        }
+      },
+      "name": "Novo Lead?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [ 600, 300 ]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "tableId": "leads",
+        "fieldsUi": {
+          "fieldValues": [
+            { "fieldId": "telefone", "fieldValue": "={{$node[\"Normalizar Payload\"].json.telefone}}" },
+            { "fieldId": "nome", "fieldValue": "={{$node[\"Normalizar Payload\"].json.nome}}" },
+            { "fieldId": "historico_mensagens", "fieldValue": "=[{\"role\": \"user\", \"content\": \"{{$node['Normalizar Payload'].json.mensagem}}\"}]" }
+          ]
+        }
+      },
+      "name": "Criar Novo Lead",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [ 800, 200 ]
+    },
+    {
+      "parameters": {},
+      "name": "Juntar Fluxos",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [ 1000, 300 ]
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "operation": "create",
+        "model": "gpt-4o",
+        "prompt": "={{$node[\"Normalizar Payload\"].json.mensagem}}",
+        "systemMessage": "=Você é o agente SDR (Sales Development Representative) da imobiliária Adão Imóveis.\nSeu objetivo é fazer um atendimento inicial, amigável e humano para pré-qualificar os clientes.\n\nREGRAS IMPORTANTES:\n1. NUNCA informe preços diretamente. Se o cliente perguntar o preço, diga que os valores variam conforme o perfil do imóvel e o plano de pagamento, e faça uma pergunta qualificatória.\n2. Faça perguntas curtas e naturais para descobrir: Renda mensal, Valor disponível para entrada, Região de interesse, Tipo de imóvel e Prazo de compra.\n3. Faça apenas UMA pergunta por vez para não assustar o cliente.\n4. Mantenha as respostas curtas e objetivas, como se estivesse no WhatsApp.\n\nLembre-se: Você está conversando com: {{$node[\"Normalizar Payload\"].json.nome}}."
+      },
+      "name": "OpenAI - Gerar Resposta",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [ 1200, 300 ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            { "name": "status", "value": "sucesso" },
+            { "name": "mensagem_recebida", "value": "={{$node[\"Normalizar Payload\"].json.mensagem}}" },
+            { "name": "resposta_ia", "value": "={{$json.message.content}}" }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Resposta Final",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [ 1400, 300 ]
+    }
+  ],
+  "connections": {
+    "Webhook Entrada": {
+      "main": [
+        [ { "node": "Normalizar Payload", "type": "main", "index": 0 } ]
+      ]
+    },
+    "Normalizar Payload": {
+      "main": [
+        [ { "node": "Consultar Lead", "type": "main", "index": 0 } ]
+      ]
+    },
+    "Consultar Lead": {
+      "main": [
+        [ { "node": "Novo Lead?", "type": "main", "index": 0 } ]
+      ]
+    },
+    "Novo Lead?": {
+      "main": [
+        [ { "node": "Criar Novo Lead", "type": "main", "index": 0 } ],
+        [ { "node": "Juntar Fluxos", "type": "main", "index": 0 } ]
+      ]
+    },
+    "Criar Novo Lead": {
+      "main": [
+        [ { "node": "Juntar Fluxos", "type": "main", "index": 0 } ]
+      ]
+    },
+    "Juntar Fluxos": {
+      "main": [
+        [ { "node": "OpenAI - Gerar Resposta", "type": "main", "index": 0 } ]
+      ]
+    },
+    "OpenAI - Gerar Resposta": {
+      "main": [
+        [ { "node": "Resposta Final", "type": "main", "index": 0 } ]
+      ]
+    }
+  }
+}
