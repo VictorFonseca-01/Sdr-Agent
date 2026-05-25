@@ -76,3 +76,53 @@ body {
   animation: spin 1s linear infinite;
   display: inline-block;
 }
+
+/* Tooltip customizado */
+.tooltip-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: help;
+}
+
+.tooltip-box {
+  position: absolute;
+  top: 130%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-8px);
+  background: rgba(15, 15, 20, 0.95);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-glass);
+  color: var(--text-main);
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  width: 220px;
+  text-align: center;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 100;
+  line-height: 1.4;
+  white-space: normal;
+  text-transform: none;
+}
+
+.tooltip-container:hover .tooltip-box {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.tooltip-box::after {
+  content: "";
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: transparent transparent rgba(15, 15, 20, 0.95) transparent;
+}
+
