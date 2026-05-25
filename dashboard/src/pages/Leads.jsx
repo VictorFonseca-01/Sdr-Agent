@@ -440,9 +440,9 @@ export default function Leads() {
                         padding: '16px', 
                         cursor: 'grab', 
                         position: 'relative', 
-                        borderLeft: \`4px solid \${colColor}\`, 
+                        borderLeft: `4px solid ${colColor}`, 
                         background: expandedLeads[lead.id] ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)',
-                        boxShadow: expandedLeads[lead.id] ? \`0 0 15px \${colColor}33\` : 'none',
+                        boxShadow: expandedLeads[lead.id] ? `0 0 15px ${colColor}33` : 'none',
                         transition: 'background 0.3s'
                       }}
                     >

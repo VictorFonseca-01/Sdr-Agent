@@ -450,8 +450,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [
-        4336,
-        1472
+        10500,
+        3248
       ],
       "notesInFlow": true,
       "continueOnFail": true,
@@ -480,8 +480,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [
-        4736,
-        1568
+        10900,
+        3248
       ],
       "notesInFlow": true,
       "continueOnFail": true,
@@ -638,79 +638,6 @@
           "name": "Supabase account 2"
         }
       }
-    },
-    {
-      "parameters": {
-        "operation": "getAll",
-        "tableId": "leads",
-        "returnAll": true,
-        "filters": {
-          "conditions": [
-            {
-              "keyName": "id",
-              "condition": "eq",
-              "keyValue": "={{ $json.body.lead_id }}"
-            }
-          ]
-        }
-      },
-      "id": "40b151ab-ec90-4886-b484-90ff6a27e7d0",
-      "name": "Buscar Lead (Supabase)",
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
-      "position": [
-        420,
-        200
-      ],
-      "credentials": {
-        "supabaseApi": {
-          "id": "3Hp4m3KaX23RwFHq",
-          "name": "Supabase account 2"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "operation": "getAll",
-        "tableId": "leads",
-        "returnAll": true,
-        "filters": {
-          "conditions": [
-            {
-              "keyName": "id",
-              "condition": "eq",
-              "keyValue": "={{ $json.body.lead_id }}"
-            }
-          ]
-        }
-      },
-      "id": "71b262bc-fd81-4997-c595-80df7b38e8e1",
-      "name": "Buscar Lead 2 (Supabase)",
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
-      "position": [
-        420,
-        500
-      ],
-      "credentials": {
-        "supabaseApi": {
-          "id": "3Hp4m3KaX23RwFHq",
-          "name": "Supabase account 2"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "content": "=\nLead {{ $json.nome }} ({$json.telefone}) marcou como Pronto para Venda.\n\nAqui você adiciona o nó HTTP Request apontando para sua Evolution API ou Z-API para mandar mensagem para o celular do corretor."
-      },
-      "id": "943a8482-83a1-4935-b632-9956e3396252",
-      "name": "Disparar WhatsApp (Placeholder)",
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        640,
-        460
-      ]
     },
     {
       "parameters": {
