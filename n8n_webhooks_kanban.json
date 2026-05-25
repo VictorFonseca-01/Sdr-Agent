@@ -1,0 +1,200 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "qualificar-ia",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "8bb5d12a-3e81-443b-8581-229204368cf1",
+      "name": "Webhook (Qualificar IA)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        200,
+        200
+      ],
+      "webhookId": "qualificar-ia"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "leads",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.body.lead_id }}"
+            }
+          ]
+        }
+      },
+      "id": "40b151ab-ec90-4886-b484-90ff6a27e7d0",
+      "name": "Buscar Lead (Supabase)",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        420,
+        200
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "3Hp4m3KaX23RwFHq",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "=\nLead {{ $json.nome }} ({$json.telefone}) foi enviado para qualificação manual pela IA.\n\nAqui você deve conectar com o seu Agente de IA para ele mandar a primeira mensagem puxando papo com o Lead."
+      },
+      "id": "382a9391-729c-4824-a521-8845e2285141",
+      "name": "Logica IA (Placeholder)",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        640,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"success\": true,\n  \"message\": \"Lead enviado para qualificação.\"\n}",
+        "options": {}
+      },
+      "id": "a9d59021-ef70-4ccb-83c1-b0db402dd1fb",
+      "name": "Responder Dashboard (IA)",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        640,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "notificar-vendedor",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "3c5f2b20-1a73-4f9e-aa91-382902377b21",
+      "name": "Webhook (Vendedor)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        200,
+        500
+      ],
+      "webhookId": "notificar-vendedor"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "leads",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.body.lead_id }}"
+            }
+          ]
+        }
+      },
+      "id": "71b262bc-fd81-4997-c595-80df7b38e8e1",
+      "name": "Buscar Lead 2 (Supabase)",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        420,
+        500
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "3Hp4m3KaX23RwFHq",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "=\nLead {{ $json.nome }} ({$json.telefone}) marcou como Pronto para Venda.\n\nAqui você adiciona o nó HTTP Request apontando para sua Evolution API ou Z-API para mandar mensagem para o celular do corretor."
+      },
+      "id": "943a8482-83a1-4935-b632-9956e3396252",
+      "name": "Disparar WhatsApp (Placeholder)",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        640,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"success\": true,\n  \"message\": \"Vendedor notificado.\"\n}",
+        "options": {}
+      },
+      "id": "b9a69132-ff81-4ddc-84d2-c0fc405ed2gc",
+      "name": "Responder Dashboard (Vendedor)",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        640,
+        580
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook (Qualificar IA)": {
+      "main": [
+        [
+          {
+            "node": "Buscar Lead (Supabase)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Lead (Supabase)": {
+      "main": [
+        [
+          {
+            "node": "Responder Dashboard (IA)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook (Vendedor)": {
+      "main": [
+        [
+          {
+            "node": "Buscar Lead 2 (Supabase)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Lead 2 (Supabase)": {
+      "main": [
+        [
+          {
+            "node": "Responder Dashboard (Vendedor)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

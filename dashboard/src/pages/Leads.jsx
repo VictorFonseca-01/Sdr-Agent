@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { 
   Users, MessageSquare, TrendingUp, Search, 
   Filter, Phone, ExternalLink, RefreshCw, LogOut,
-  ChevronDown, ChevronUp, Sparkles, MapPin, DollarSign, Target, ArrowRight, UserCheck, Info, UserX, AlertTriangle
+  ChevronDown, ChevronUp, Sparkles, MapPin, DollarSign, Target, ArrowRight, UserCheck, Info, UserX, AlertTriangle, Send
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -14,7 +14,32 @@ export default function Leads() {
   const [filterStatus, setFilterStatus] = useState('all');
   const [expandedLeads, setExpandedLeads] = useState({});
   const [activeKpiDropdown, setActiveKpiDropdown] = useState(null);
-  const [kpiSearch, setKpiSearch] = useState('');
+  const [leadTimelines, setLeadTimelines] = useState({});
+  const [webhookLoading, setWebhookLoading] = useState({});
+
+  const fetchTimeline = async (leadId) => {
+    const { data: messages } = await supabase
+      .from('lead_messages')
+      .select('*')
+      .eq('lead_id', leadId)
+      .order('created_at', { ascending: true });
+
+    const { data: events } = await supabase
+      .from('lead_events')
+      .select('*')
+      .eq('lead_id', leadId)
+      .order('created_at', { ascending: true });
+
+    const unified = [
+      ...(messages || []).map(m => ({ ...m, type: 'message' })),
+      ...(events || []).map(e => ({ ...e, type: 'event' }))
+    ].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+    setLeadTimelines(prev => ({
+      ...prev,
+      [leadId]: unified
+    }));
+  };
 
   useEffect(() => {
     fetchLeads(true);
@@ -24,7 +49,6 @@ export default function Leads() {
     };
     window.addEventListener('click', handleGlobalClick);
 
-    // Auto-refresh silencioso a cada 30 segundos
     const interval = setInterval(() => {
       fetchLeads(false);
     }, 30000);
@@ -34,26 +58,6 @@ export default function Leads() {
       window.removeEventListener('click', handleGlobalClick);
     };
   }, []);
-
-  const scrollToAndExpandLead = (leadId) => {
-    setExpandedLeads(prev => ({
-      ...prev,
-      [leadId]: true
-    }));
-    
-    setTimeout(() => {
-      const element = document.getElementById(`lead-row-${leadId}`);
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        // Flash visual highlight
-        element.style.background = 'rgba(139, 92, 246, 0.2)';
-        setTimeout(() => {
-          element.style.background = '';
-        }, 1500);
-      }
-    }, 100);
-    setActiveKpiDropdown(null);
-  };
 
   const fetchLeads = async (showLoading = true) => {
     if (showLoading) setLoading(true);
@@ -67,20 +71,17 @@ export default function Leads() {
   };
 
   const toggleExpand = (leadId) => {
+    const isExpanding = !expandedLeads[leadId];
     setExpandedLeads(prev => ({
       ...prev,
-      [leadId]: !prev[leadId]
+      [leadId]: isExpanding
     }));
+    if (isExpanding) {
+      fetchTimeline(leadId);
+    }
   };
 
   const handleLogout = () => supabase.auth.signOut();
-
-  const getTemperatureBadge = (temp) => {
-    const t = temp?.toLowerCase();
-    if (t === 'quente' || t === 'hot') return 'badge-hot';
-    if (t === 'morno' || t === 'warm') return 'badge-warm';
-    return 'badge-cold';
-  };
 
   const openWhatsApp = (phone, name) => {
     const message = `Olá ${name || ''}, como podemos ajudar?`;
@@ -99,32 +100,78 @@ export default function Leads() {
   const isLeadLost = (lead) => {
     if (!lead.ultima_interacao) return false;
     const diffDays = getDaysSinceLastInteraction(lead.ultima_interacao);
-    
-    // Considerado perdido se passar de 3 dias sem atendimento e não foi finalizada a venda
     const isInactive = diffDays >= 3;
     const isNotClosed = !lead.status_funil?.toLowerCase().includes('pronto');
     return isInactive && isNotClosed;
+  };
+
+  // Funções de Webhook
+  const triggerWebhook = async (leadId, type) => {
+    setWebhookLoading(prev => ({ ...prev, [`${leadId}-${type}`]: true }));
+    try {
+      const url = type === 'ia' 
+        ? 'https://victorfonseca123.app.n8n.cloud/webhook/qualificar-ia'
+        : 'https://victorfonseca123.app.n8n.cloud/webhook/notificar-vendedor';
+        
+      await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lead_id: leadId })
+      });
+      // Poderiamos adicionar um toast de sucesso aqui
+    } catch (e) {
+      console.error("Erro ao chamar webhook:", e);
+    }
+    setWebhookLoading(prev => ({ ...prev, [`${leadId}-${type}`]: false }));
+  };
+
+  // Drag and Drop Handlers
+  const handleDragStart = (e, lead, colId) => {
+    e.dataTransfer.setData('leadId', lead.id);
+    e.dataTransfer.setData('sourceCol', colId);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = async (e, destColId) => {
+    e.preventDefault();
+    const leadId = e.dataTransfer.getData('leadId');
+    const sourceCol = e.dataTransfer.getData('sourceCol');
+    
+    if (!leadId || sourceCol === destColId || destColId === 'perdido') return;
+
+    let novaTemperatura = '';
+    let novoStatus = '';
+
+    if (destColId === 'frio') { novaTemperatura = 'Frio'; novoStatus = 'Novo'; }
+    else if (destColId === 'morno') { novaTemperatura = 'Morno'; novoStatus = 'Qualificando'; }
+    else if (destColId === 'quente') { novaTemperatura = 'Quente'; novoStatus = 'Quente'; }
+    else if (destColId === 'pronto') { novaTemperatura = 'Pronto para Vendas'; novoStatus = 'Pronto para Vendas'; }
+
+    // Atualiza otimista a UI
+    setLeads(prev => prev.map(l => l.id === leadId ? { ...l, temperatura: novaTemperatura, status_funil: novoStatus } : l));
+
+    // Atualiza o banco de dados
+    await supabase.from('leads').update({ temperatura: novaTemperatura, status_funil: novoStatus }).eq('id', leadId);
+
+    // Automations (Opcional): disparar webhooks automaticamente ao dropar
+    if (destColId === 'morno' || destColId === 'quente') {
+      triggerWebhook(leadId, 'ia');
+    } else if (destColId === 'pronto') {
+      triggerWebhook(leadId, 'vendedor');
+    }
   };
 
   const filteredLeads = leads.filter(lead => {
     const matchesSearch = (lead.nome?.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           lead.telefone?.includes(searchTerm));
     
-    if (filterStatus === 'perdido') {
-      return matchesSearch && isLeadLost(lead);
-    }
-
-    if (filterStatus === 'qualificar') {
-      return matchesSearch && (lead.temperatura?.toLowerCase() === 'frio' || lead.temperatura?.toLowerCase() === 'morno' || lead.temperatura?.toLowerCase() === 'cold' || lead.temperatura?.toLowerCase() === 'warm') && !isLeadLost(lead);
-    }
-
-    if (filterStatus === 'quente') {
-      return matchesSearch && (lead.temperatura?.toLowerCase() === 'quente' || lead.temperatura?.toLowerCase() === 'hot') && !isLeadLost(lead);
-    }
-
-    if (filterStatus === 'pronto') {
-      return matchesSearch && (lead.status_funil?.toLowerCase().includes('pronto') || lead.temperatura?.toLowerCase().includes('pronto')) && !isLeadLost(lead);
-    }
+    if (filterStatus === 'perdido') return matchesSearch && isLeadLost(lead);
+    if (filterStatus === 'qualificar') return matchesSearch && (lead.temperatura?.toLowerCase() === 'frio' || lead.temperatura?.toLowerCase() === 'morno' || lead.temperatura?.toLowerCase() === 'cold' || lead.temperatura?.toLowerCase() === 'warm') && !isLeadLost(lead);
+    if (filterStatus === 'quente') return matchesSearch && (lead.temperatura?.toLowerCase() === 'quente' || lead.temperatura?.toLowerCase() === 'hot') && !isLeadLost(lead);
+    if (filterStatus === 'pronto') return matchesSearch && (lead.status_funil?.toLowerCase().includes('pronto') || lead.temperatura?.toLowerCase().includes('pronto')) && !isLeadLost(lead);
     
     const matchesStatus = filterStatus === 'all' || 
                           lead.status_funil?.toLowerCase().includes(filterStatus.toLowerCase()) ||
@@ -138,7 +185,7 @@ export default function Leads() {
   const perdidosLeads = leads.filter(isLeadLost);
 
   return (
-    <div className="dashboard-container" style={{ padding: '30px', maxWidth: '1400px', margin: '0 auto' }}>
+    <div className="dashboard-container" style={{ padding: '30px', maxWidth: '100%', margin: '0 auto' }}>
       {/* Header */}
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
         <div>
@@ -329,258 +376,228 @@ export default function Leads() {
         </div>
       )}
 
-      {/* Leads Table */}
-      <div className="glass-card" style={{ overflow: 'hidden' }}>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-glass)' }}>
-                <th style={{ padding: '20px', color: 'var(--text-muted)', fontWeight: '600' }}>Lead</th>
-                <th style={{ padding: '20px', color: 'var(--text-muted)', fontWeight: '600' }}>Status</th>
-                <th style={{ padding: '20px', color: 'var(--text-muted)', fontWeight: '600' }}>Temperatura</th>
-                <th style={{ padding: '20px', color: 'var(--text-muted)', fontWeight: '600' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    Qualidade do Lead
-                    <div className="tooltip-container">
-                      <Info size={14} style={{ color: 'var(--text-muted)' }} />
-                      <div className="tooltip-box">
-                        Percentual que indica o nível de interesse e compatibilidade do lead com base no perfil e comportamento analisados pela IA.
-                      </div>
-                    </div>
-                  </div>
-                </th>
-                <th style={{ padding: '20px', color: 'var(--text-muted)', fontWeight: '600' }}>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              <AnimatePresence>
-                {filteredLeads.map((lead) => (
-                  <React.Fragment key={lead.id}>
-                    <motion.tr 
-                      id={`lead-row-${lead.id}`}
-                      layout
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      style={{ borderBottom: '1px solid var(--border-glass)', transition: 'background 0.2s', cursor: 'pointer' }}
+      {/* Kanban Board */}
+      <div style={{ display: 'flex', gap: '20px', overflowX: 'auto', paddingBottom: '20px', minHeight: '60vh' }}>
+        {['frio', 'morno', 'quente', 'pronto', 'perdido'].map(colId => {
+          if (colId === 'perdido' && filterStatus !== 'all' && filterStatus !== 'perdido') return null;
+
+          const colTitle = colId === 'frio' ? 'Novos / Frios' : 
+                           colId === 'morno' ? 'Em Qualificação' : 
+                           colId === 'quente' ? 'Quentes' : 
+                           colId === 'pronto' ? 'Prontos para Venda' : 'Perdidos';
+          
+          const colColor = colId === 'frio' ? 'var(--text-muted)' : 
+                           colId === 'morno' ? '#0ea5e9' : 
+                           colId === 'quente' ? '#f59e0b' : 
+                           colId === 'pronto' ? '#10b981' : '#ef4444';
+
+          const colLeads = filteredLeads.filter(l => {
+            const isLost = isLeadLost(l);
+            if (colId === 'perdido') return isLost;
+            if (isLost) return false;
+            if (colId === 'pronto') return l.status_funil?.toLowerCase().includes('pronto') || l.temperatura?.toLowerCase().includes('pronto');
+            if (colId === 'quente') return l.temperatura?.toLowerCase() === 'quente' || l.temperatura?.toLowerCase() === 'hot';
+            if (colId === 'morno') return l.temperatura?.toLowerCase() === 'morno' || l.temperatura?.toLowerCase() === 'warm';
+            return !l.temperatura || l.temperatura?.toLowerCase() === 'frio' || l.temperatura?.toLowerCase() === 'cold';
+          });
+
+          if (colId === 'perdido' && colLeads.length === 0) return null;
+
+          return (
+            <div 
+              key={colId} 
+              onDragOver={handleDragOver}
+              onDrop={(e) => handleDrop(e, colId)}
+              style={{ 
+                flex: '0 0 350px', 
+                background: 'rgba(255,255,255,0.02)', 
+                border: '1px solid var(--border-glass)', 
+                borderRadius: '12px', 
+                display: 'flex', 
+                flexDirection: 'column' 
+              }}
+            >
+              <div style={{ padding: '16px', borderBottom: '1px solid var(--border-glass)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 style={{ fontSize: '1rem', fontWeight: '700', color: colColor, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  {colTitle}
+                </h3>
+                <span style={{ background: 'rgba(255,255,255,0.1)', padding: '4px 10px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 'bold' }}>{colLeads.length}</span>
+              </div>
+              
+              <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto', flex: 1, maxHeight: '70vh' }}>
+                <AnimatePresence>
+                  {colLeads.map(lead => (
+                    <motion.div 
+                      key={lead.id}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, lead, colId)}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
                       onClick={() => toggleExpand(lead.id)}
-                      className="lead-row"
+                      className="glass-card"
+                      style={{ 
+                        padding: '16px', 
+                        cursor: 'grab', 
+                        position: 'relative', 
+                        borderLeft: \`4px solid \${colColor}\`, 
+                        background: expandedLeads[lead.id] ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)',
+                        boxShadow: expandedLeads[lead.id] ? \`0 0 15px \${colColor}33\` : 'none',
+                        transition: 'background 0.3s'
+                      }}
                     >
-                      <td style={{ padding: '20px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <span style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
-                            {expandedLeads[lead.id] ? <ChevronUp size={18} style={{ color: 'var(--primary)' }} /> : <ChevronDown size={18} />}
-                          </span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                        <div style={{ fontWeight: '700', fontSize: '1.05rem' }}>{lead.nome || 'Sem Nome'}</div>
+                        {lead.score_qualificacao && (
+                          <div style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--primary)', background: 'rgba(139, 92, 246, 0.1)', padding: '2px 6px', borderRadius: '4px' }}>
+                            {lead.score_qualificacao}%
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Phone size={14}/> {lead.telefone}
+                      </div>
+                      
+                      {/* Tags */}
+                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: expandedLeads[lead.id] ? '16px' : '0' }}>
+                        {lead.produto_interesse && <span style={{ fontSize: '0.75rem', padding: '4px 8px', borderRadius: '6px', background: 'rgba(139, 92, 246, 0.2)', color: '#c4b5fd' }}>{lead.produto_interesse}</span>}
+                        {lead.orcamento && <span style={{ fontSize: '0.75rem', padding: '4px 8px', borderRadius: '6px', background: 'rgba(16, 185, 129, 0.2)', color: '#6ee7b7' }}>{lead.orcamento}</span>}
+                      </div>
+
+                      {/* Expanded Details */}
+                      {expandedLeads[lead.id] && (
+                        <div
+                          onClick={(e) => e.stopPropagation()}
+                          style={{ borderTop: '1px solid var(--border-glass)', paddingTop: '16px', marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '20px', cursor: 'default' }}
+                        >
+                          {/* Ações Manuais Webhook */}
+                          <div style={{ display: 'flex', gap: '10px' }}>
+                            <button 
+                              onClick={() => triggerWebhook(lead.id, 'ia')}
+                              disabled={webhookLoading[`\${lead.id}-ia`]}
+                              className="glass-card" 
+                              style={{ 
+                                padding: '8px', fontSize: '0.75rem', flex: 1, color: '#0ea5e9', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', border: '1px solid rgba(14, 165, 233, 0.3)' 
+                              }}
+                            >
+                              {webhookLoading[`\${lead.id}-ia`] ? <RefreshCw size={14} className="animate-spin" /> : <Sparkles size={14}/>}
+                              Qualificar c/ IA
+                            </button>
+                            <button 
+                              onClick={() => triggerWebhook(lead.id, 'vendedor')}
+                              disabled={webhookLoading[`\${lead.id}-vendedor`]}
+                              className="glass-card" 
+                              style={{ 
+                                padding: '8px', fontSize: '0.75rem', flex: 1, color: '#10b981', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', border: '1px solid rgba(16, 185, 129, 0.3)' 
+                              }}
+                            >
+                              {webhookLoading[`\${lead.id}-vendedor`] ? <RefreshCw size={14} className="animate-spin" /> : <Send size={14} />}
+                              Notificar Vendedor
+                            </button>
+                          </div>
+
                           <div>
-                            <div style={{ fontWeight: '600' }}>{lead.nome || 'Sem Nome'}</div>
-                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{lead.telefone}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td style={{ padding: '20px' }}>
-                        <span style={{ fontSize: '0.85rem', textTransform: 'capitalize' }}>{lead.status_funil}</span>
-                      </td>
-                      <td style={{ padding: '20px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                          <span className={`badge ${getTemperatureBadge(lead.temperatura)}`}>
-                            {lead.temperatura || 'Frio'}
-                          </span>
-                          {isLeadLost(lead) && (
-                            <span className="badge" style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
-                              Perdido
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td style={{ padding: '20px' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <div style={{ width: '80px', height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', overflow: 'hidden' }}>
-                              <div style={{ width: `${Math.min(lead.score_qualificacao || 0, 100)}%`, height: '100%', background: 'var(--primary)' }}></div>
+                            <div style={{ color: 'var(--primary)', fontWeight: 'bold', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem' }}>
+                              <Sparkles size={16}/> Resumo SDR (IA)
                             </div>
-                            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: '600' }}>
-                              {lead.score_qualificacao || 0}%
-                            </span>
+                            <div style={{ color: 'var(--text-main)', lineHeight: '1.5', fontSize: '0.85rem', background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px' }}>
+                              {lead.resumo_sdr || 'Ainda sem resumo. O SDR IA gerará um após a primeira qualificação.'}
+                            </div>
                           </div>
-                          <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                            Qualidade do lead
-                          </span>
-                        </div>
-                      </td>
-                      <td style={{ padding: '20px' }} onClick={(e) => e.stopPropagation()}>
-                        <div style={{ display: 'flex', gap: '10px' }}>
-                          <button 
-                            onClick={() => toggleExpand(lead.id)}
-                            className="glass-card" 
-                            style={{ padding: '6px 12px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', color: 'white' }}
-                          >
-                            {expandedLeads[lead.id] ? 'Recolher' : 'Expandir'}
-                          </button>
-                          <button 
-                            onClick={() => openWhatsApp(lead.telefone, lead.nome)}
-                            className="btn-primary" 
-                            style={{ padding: '6px 12px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}
-                          >
-                            <Phone size={14} /> WhatsApp
-                          </button>
-                        </div>
-                      </td>
-                    </motion.tr>
-
-                    {expandedLeads[lead.id] && (
-                      <tr key={`${lead.id}-details`}>
-                        <td colSpan={5} style={{ padding: '0 20px 20px 20px', background: 'rgba(255,255,255,0.01)' }}>
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.3 }}
-                            style={{ overflow: 'hidden' }}
-                          >
-                            <div style={{
-                              padding: '20px',
-                              background: 'rgba(255, 255, 255, 0.02)',
-                              border: '1px solid var(--border-glass)',
-                              borderRadius: '12px',
-                              marginTop: '5px',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: '20px'
+                          
+                          {/* Timeline / Messages */}
+                          <div>
+                            <div style={{ color: '#0ea5e9', fontWeight: 'bold', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem' }}>
+                              <MessageSquare size={16}/> Histórico de Interações
+                            </div>
+                            <div style={{ 
+                              maxHeight: '300px', 
+                              overflowY: 'auto', 
+                              display: 'flex', 
+                              flexDirection: 'column', 
+                              gap: '10px', 
+                              padding: '12px',
+                              background: 'rgba(0,0,0,0.3)',
+                              borderRadius: '8px',
+                              border: '1px solid rgba(255,255,255,0.05)'
                             }}>
-                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
-                                {/* Alerta de Lead Perdido */}
-                                {isLeadLost(lead) && (
-                                  <div style={{
-                                    background: 'rgba(239, 68, 68, 0.08)',
-                                    border: '1px solid rgba(239, 68, 68, 0.25)',
-                                    padding: '16px',
-                                    borderRadius: '8px',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    gap: '8px',
-                                    gridColumn: '1 / -1'
-                                  }}>
-                                    <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.95rem', color: '#f87171', fontWeight: '700', margin: 0 }}>
-                                      <AlertTriangle size={16} /> Lead Perdido por Falta de Atendimento
-                                    </h4>
-                                    <p style={{ fontSize: '0.9rem', color: 'var(--text-main)', lineHeight: '1.4', margin: 0 }}>
-                                      Este lead foi classificado como <strong>Perdido</strong> pois permaneceu sem atendimento ou interação há <strong>{getDaysSinceLastInteraction(lead.ultima_interacao)} dias</strong> (limite tolerável: 3 dias). Última atividade registrada em {new Date(lead.ultima_interacao).toLocaleDateString('pt-BR')}.
-                                    </p>
-                                  </div>
-                                )}
-
-                                {/* IA Insights Card */}
-                                <div style={{
-                                  background: 'rgba(139, 92, 246, 0.05)',
-                                  border: '1px solid rgba(139, 92, 246, 0.1)',
-                                  padding: '16px',
-                                  borderRadius: '8px',
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  gap: '10px'
-                                }}>
-                                  <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.95rem', color: 'var(--primary)', fontWeight: '700', margin: 0 }}>
-                                    <Sparkles size={16} /> Resumo SDR (IA)
-                                  </h4>
-                                  <p style={{ fontSize: '0.9rem', color: 'var(--text-main)', lineHeight: '1.4', margin: 0 }}>
-                                    {lead.resumo_sdr || 'Sem resumo de qualificação disponível no momento.'}
-                                  </p>
+                              {!leadTimelines[lead.id] ? (
+                                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center', padding: '20px 0' }}>
+                                  <RefreshCw size={16} className="animate-spin" style={{ margin: '0 auto', marginBottom: '8px' }} />
+                                  Carregando histórico...
                                 </div>
-
-                                {/* Preferences Card */}
-                                <div style={{
-                                  background: 'rgba(255, 255, 255, 0.01)',
-                                  border: '1px solid var(--border-glass)',
-                                  padding: '16px',
-                                  borderRadius: '8px',
-                                  display: 'grid',
-                                  gridTemplateColumns: '1fr 1fr',
-                                  gap: '12px'
-                                }}>
-                                  <div>
-                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                      <Target size={12} /> Produto de Interesse
-                                    </div>
-                                    <div style={{ fontSize: '0.9rem', fontWeight: '600', marginTop: '2px' }}>
-                                      {lead.produto_interesse || 'Não especificado'}
-                                    </div>
-                                  </div>
-                                  <div>
-                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                      <DollarSign size={12} /> Orçamento
-                                    </div>
-                                    <div style={{ fontSize: '0.9rem', fontWeight: '600', marginTop: '2px', color: '#10b981' }}>
-                                      {lead.orcamento || 'Não informado'}
-                                    </div>
-                                  </div>
-                                  <div>
-                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                      <DollarSign size={12} /> Entrada Disponível
-                                    </div>
-                                    <div style={{ fontSize: '0.9rem', fontWeight: '600', marginTop: '2px' }}>
-                                      {lead.valor_entrada || 'Não informada'}
-                                    </div>
-                                  </div>
-                                  <div>
-                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                      <MapPin size={12} /> Região de Interesse
-                                    </div>
-                                    <div style={{ fontSize: '0.9rem', fontWeight: '600', marginTop: '2px' }}>
-                                      {lead.regiao_interesse || 'Não informada'}
-                                    </div>
-                                  </div>
+                              ) : leadTimelines[lead.id].length === 0 ? (
+                                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center', padding: '20px 0' }}>
+                                  Nenhuma interação registrada.
                                 </div>
-                              </div>
-
-                              {/* Footer Action items inside expand details */}
-                              <div style={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                borderTop: '1px solid var(--border-glass)',
-                                paddingTop: '12px',
-                                flexWrap: 'wrap',
-                                gap: '10px'
-                              }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                  <ArrowRight size={16} style={{ color: 'var(--accent)' }} />
-                                  <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Próxima Ação:</span>
-                                  <span style={{ fontSize: '0.85rem', fontWeight: '600' }}>{lead.proxima_acao || 'Aguardando próxima interação'}</span>
-                                </div>
-
-                                {lead.encaminhar_para_consultor && (
-                                  <div style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '6px',
-                                    background: 'rgba(16, 185, 129, 0.1)',
-                                    border: '1px solid rgba(16, 185, 129, 0.2)',
-                                    padding: '6px 12px',
-                                    borderRadius: '20px',
-                                    fontSize: '0.8rem',
-                                    color: '#34d399',
-                                    fontWeight: '600'
-                                  }}>
-                                    <UserCheck size={14} /> Encaminhar para Consultor
-                                  </div>
-                                )}
-                              </div>
+                              ) : (
+                                leadTimelines[lead.id].map((item, i) => {
+                                  if (item.type === 'event') {
+                                    return (
+                                      <div key={'evt-'+i} style={{ fontSize: '0.75rem', padding: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '6px', color: 'var(--text-muted)', textAlign: 'center', margin: '4px 0' }}>
+                                        {item.description} - {new Date(item.created_at).toLocaleDateString('pt-BR')}
+                                      </div>
+                                    );
+                                  }
+                                  
+                                  const isClient = item.sender === 'client' || item.sender === 'user' || item.sender === 'lead';
+                                  return (
+                                    <div key={'msg-'+i} style={{ 
+                                      alignSelf: isClient ? 'flex-end' : 'flex-start',
+                                      background: isClient ? 'var(--primary)' : 'rgba(255,255,255,0.1)',
+                                      color: 'white',
+                                      padding: '10px 14px',
+                                      borderRadius: '12px',
+                                      borderBottomRightRadius: isClient ? '2px' : '12px',
+                                      borderBottomLeftRadius: !isClient ? '2px' : '12px',
+                                      maxWidth: '90%',
+                                      fontSize: '0.9rem',
+                                      lineHeight: '1.4',
+                                      boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
+                                    }}>
+                                      {item.content}
+                                      <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.6)', marginTop: '6px', textAlign: isClient ? 'right' : 'left' }}>
+                                        {new Date(item.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                        {!isClient && ' • SDR IA'}
+                                      </div>
+                                    </div>
+                                  );
+                                })
+                              )}
                             </div>
-                          </motion.div>
-                        </td>
-                      </tr>
-                    )}
-                  </React.Fragment>
-                ))}
-              </AnimatePresence>
-            </tbody>
-          </table>
-          {filteredLeads.length === 0 && (
-            <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
-              Nenhum lead encontrado.
+                          </div>
+
+                          <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); toggleExpand(lead.id); }}
+                              className="glass-card" 
+                              style={{ padding: '10px', fontSize: '0.85rem', flex: 1, color: 'white', cursor: 'pointer' }}
+                            >
+                              Recolher
+                            </button>
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); openWhatsApp(lead.telefone, lead.nome); }}
+                              className="btn-primary" 
+                              style={{ padding: '10px', fontSize: '0.85rem', flex: 2, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
+                            >
+                              <Phone size={16} /> Abrir WhatsApp
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+                {colLeads.length === 0 && (
+                  <div style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)', fontSize: '0.85rem', border: '1px dashed var(--border-glass)', borderRadius: '8px' }}>
+                    Nenhum lead nesta etapa
+                  </div>
+                )}
+              </div>
             </div>
-          )}
-        </div>
+          );
+        })}
       </div>
     </div>
   );
