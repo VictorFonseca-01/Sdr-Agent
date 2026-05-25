@@ -113,6 +113,18 @@ export default function Leads() {
     if (filterStatus === 'perdido') {
       return matchesSearch && isLeadLost(lead);
     }
+
+    if (filterStatus === 'qualificar') {
+      return matchesSearch && (lead.temperatura?.toLowerCase() === 'frio' || lead.temperatura?.toLowerCase() === 'morno' || lead.temperatura?.toLowerCase() === 'cold' || lead.temperatura?.toLowerCase() === 'warm') && !isLeadLost(lead);
+    }
+
+    if (filterStatus === 'quente') {
+      return matchesSearch && (lead.temperatura?.toLowerCase() === 'quente' || lead.temperatura?.toLowerCase() === 'hot') && !isLeadLost(lead);
+    }
+
+    if (filterStatus === 'pronto') {
+      return matchesSearch && (lead.status_funil?.toLowerCase().includes('pronto') || lead.temperatura?.toLowerCase().includes('pronto')) && !isLeadLost(lead);
+    }
     
     const matchesStatus = filterStatus === 'all' || 
                           lead.status_funil?.toLowerCase().includes(filterStatus.toLowerCase()) ||
@@ -146,233 +158,113 @@ export default function Leads() {
       {/* Metrics */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '40px', position: 'relative', zIndex: 50 }}>
         {/* Total */}
-        <div className="glass-card" style={{ padding: '20px', position: 'relative' }}>
+        <div 
+          className="glass-card" 
+          onClick={() => setFilterStatus('all')}
+          style={{ 
+            padding: '20px', 
+            position: 'relative',
+            cursor: 'pointer',
+            transition: 'all 0.3s ease',
+            border: filterStatus === 'all' ? '2px solid var(--primary)' : '1px solid var(--border-glass)',
+            boxShadow: filterStatus === 'all' ? '0 0 15px rgba(139, 92, 246, 0.4)' : '',
+            transform: filterStatus === 'all' ? 'scale(1.02)' : 'none'
+          }}
+        >
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
             <Users style={{ color: 'var(--primary)' }} />
-            <span style={{ fontSize: '0.8rem', color: 'var(--primary)' }}>Ativos</span>
+            <span style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 'bold' }}>Ativos</span>
           </div>
           <h3 style={{ fontSize: '1.5rem', fontWeight: '700' }}>{leads.length}</h3>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Total de Leads</p>
         </div>
         
         {/* Para Qualificar */}
-        <div className="glass-card" style={{ padding: '20px', position: 'relative' }}>
+        <div 
+          className="glass-card" 
+          onClick={() => setFilterStatus('qualificar')}
+          style={{ 
+            padding: '20px', 
+            position: 'relative',
+            cursor: 'pointer',
+            transition: 'all 0.3s ease',
+            border: filterStatus === 'qualificar' ? '2px solid #0ea5e9' : '1px solid var(--border-glass)',
+            boxShadow: filterStatus === 'qualificar' ? '0 0 15px rgba(14, 165, 233, 0.4)' : '',
+            transform: filterStatus === 'qualificar' ? 'scale(1.02)' : 'none'
+          }}
+        >
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
             <MessageSquare style={{ color: '#0ea5e9' }} />
-            <span style={{ fontSize: '0.8rem', color: '#0ea5e9' }}>Aguardando</span>
+            <span style={{ fontSize: '0.8rem', color: '#0ea5e9', fontWeight: 'bold' }}>Aguardando</span>
           </div>
           <h3 style={{ fontSize: '1.5rem', fontWeight: '700' }}>{qualificarLeads.length}</h3>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Leads para Qualificar</p>
-          
-          {qualificarLeads.length > 0 && (
-            <div style={{ marginTop: '8px' }}>
-              <button 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setActiveKpiDropdown(activeKpiDropdown === 'qualificar' ? null : 'qualificar');
-                  setKpiSearch('');
-                }}
-                style={{ background: 'none', border: 'none', color: '#0ea5e9', fontSize: '0.75rem', cursor: 'pointer', padding: 0, fontWeight: '600' }}
-              >
-                {activeKpiDropdown === 'qualificar' ? 'Fechar lista' : 'Ver leads'}
-              </button>
-              {activeKpiDropdown === 'qualificar' && (
-                <div className="glass-card" style={{ position: 'absolute', top: '100%', left: 0, width: '240px', maxHeight: '250px', overflowY: 'auto', zIndex: 9999, marginTop: '6px', padding: '10px', background: 'rgba(15, 15, 20, 0.98)', boxShadow: '0 10px 25px rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <input 
-                    type="text" 
-                    placeholder="Filtrar por nome..." 
-                    value={kpiSearch} 
-                    onChange={(e) => setKpiSearch(e.target.value)} 
-                    onClick={(e) => e.stopPropagation()} 
-                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-glass)', borderRadius: '4px', padding: '4px 8px', fontSize: '0.7rem', color: 'white', outline: 'none' }}
-                  />
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', overflowY: 'auto', maxHeight: '160px' }}>
-                    {qualificarLeads.filter(l => l.nome?.toLowerCase().includes(kpiSearch.toLowerCase())).map(lead => (
-                      <div 
-                        key={lead.id} 
-                        onClick={(e) => { e.stopPropagation(); scrollToAndExpandLead(lead.id); }}
-                        style={{ padding: '6px 8px', fontSize: '0.75rem', cursor: 'pointer', borderRadius: '4px', borderBottom: '1px solid rgba(255,255,255,0.03)', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                        onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.08)'}
-                        onMouseLeave={(e) => e.target.style.background = 'none'}
-                      >
-                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '120px' }}>
-                          {lead.nome || 'Sem nome'}
-                        </span>
-                        <span style={{ fontSize: '0.65rem', padding: '2px 6px', borderRadius: '10px', background: 'rgba(255,255,255,0.1)', color: 'var(--text-muted)' }}>
-                          {lead.temperatura}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
         </div>
 
         {/* Quentes */}
-        <div className="glass-card" style={{ padding: '20px', position: 'relative' }}>
+        <div 
+          className="glass-card" 
+          onClick={() => setFilterStatus('quente')}
+          style={{ 
+            padding: '20px', 
+            position: 'relative',
+            cursor: 'pointer',
+            transition: 'all 0.3s ease',
+            border: filterStatus === 'quente' ? '2px solid #f59e0b' : '1px solid var(--border-glass)',
+            boxShadow: filterStatus === 'quente' ? '0 0 15px rgba(245, 158, 11, 0.4)' : '',
+            transform: filterStatus === 'quente' ? 'scale(1.02)' : 'none'
+          }}
+        >
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
             <TrendingUp style={{ color: '#f59e0b' }} />
-            <span style={{ fontSize: '0.8rem', color: '#f59e0b' }}>Oportunidade</span>
+            <span style={{ fontSize: '0.8rem', color: '#f59e0b', fontWeight: 'bold' }}>Oportunidade</span>
           </div>
           <h3 style={{ fontSize: '1.5rem', fontWeight: '700' }}>{quentesLeads.length}</h3>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Leads Quentes</p>
-          
-          {quentesLeads.length > 0 && (
-            <div style={{ marginTop: '8px' }}>
-              <button 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setActiveKpiDropdown(activeKpiDropdown === 'quentes' ? null : 'quentes');
-                  setKpiSearch('');
-                }}
-                style={{ background: 'none', border: 'none', color: '#f59e0b', fontSize: '0.75rem', cursor: 'pointer', padding: 0, fontWeight: '600' }}
-              >
-                {activeKpiDropdown === 'quentes' ? 'Fechar lista' : 'Ver leads'}
-              </button>
-              {activeKpiDropdown === 'quentes' && (
-                <div className="glass-card" style={{ position: 'absolute', top: '100%', left: 0, width: '240px', maxHeight: '250px', overflowY: 'auto', zIndex: 9999, marginTop: '6px', padding: '10px', background: 'rgba(15, 15, 20, 0.98)', boxShadow: '0 10px 25px rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <input 
-                    type="text" 
-                    placeholder="Filtrar por nome..." 
-                    value={kpiSearch} 
-                    onChange={(e) => setKpiSearch(e.target.value)} 
-                    onClick={(e) => e.stopPropagation()} 
-                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-glass)', borderRadius: '4px', padding: '4px 8px', fontSize: '0.7rem', color: 'white', outline: 'none' }}
-                  />
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', overflowY: 'auto', maxHeight: '160px' }}>
-                    {quentesLeads.filter(l => l.nome?.toLowerCase().includes(kpiSearch.toLowerCase())).map(lead => (
-                      <div 
-                        key={lead.id} 
-                        onClick={(e) => { e.stopPropagation(); scrollToAndExpandLead(lead.id); }}
-                        style={{ padding: '6px 8px', fontSize: '0.75rem', cursor: 'pointer', borderRadius: '4px', borderBottom: '1px solid rgba(255,255,255,0.03)', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                        onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.08)'}
-                        onMouseLeave={(e) => e.target.style.background = 'none'}
-                      >
-                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '120px' }}>
-                          {lead.nome || 'Sem nome'}
-                        </span>
-                        <span style={{ fontSize: '0.65rem', padding: '2px 6px', borderRadius: '10px', background: 'rgba(139, 92, 246, 0.2)', color: 'var(--primary)', fontWeight: 'bold' }}>
-                          {lead.score_qualificacao}%
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
         </div>
 
         {/* Prontos para Venda */}
-        <div className="glass-card" style={{ padding: '20px', position: 'relative' }}>
+        <div 
+          className="glass-card" 
+          onClick={() => setFilterStatus('pronto')}
+          style={{ 
+            padding: '20px', 
+            position: 'relative',
+            cursor: 'pointer',
+            transition: 'all 0.3s ease',
+            border: filterStatus === 'pronto' ? '2px solid #10b981' : '1px solid var(--border-glass)',
+            boxShadow: filterStatus === 'pronto' ? '0 0 15px rgba(16, 185, 129, 0.4)' : '',
+            transform: filterStatus === 'pronto' ? 'scale(1.02)' : 'none'
+          }}
+        >
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
             <UserCheck style={{ color: '#10b981' }} />
-            <span style={{ fontSize: '0.8rem', color: '#10b981' }}>Faturamento</span>
+            <span style={{ fontSize: '0.8rem', color: '#10b981', fontWeight: 'bold' }}>Faturamento</span>
           </div>
           <h3 style={{ fontSize: '1.5rem', fontWeight: '700' }}>{prontosLeads.length}</h3>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Prontos para Venda</p>
-          
-          {prontosLeads.length > 0 && (
-            <div style={{ marginTop: '8px' }}>
-              <button 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setActiveKpiDropdown(activeKpiDropdown === 'prontos' ? null : 'prontos');
-                  setKpiSearch('');
-                }}
-                style={{ background: 'none', border: 'none', color: '#10b981', fontSize: '0.75rem', cursor: 'pointer', padding: 0, fontWeight: '600' }}
-              >
-                {activeKpiDropdown === 'prontos' ? 'Fechar lista' : 'Ver leads'}
-              </button>
-              {activeKpiDropdown === 'prontos' && (
-                <div className="glass-card" style={{ position: 'absolute', top: '100%', left: 0, width: '240px', maxHeight: '250px', overflowY: 'auto', zIndex: 9999, marginTop: '6px', padding: '10px', background: 'rgba(15, 15, 20, 0.98)', boxShadow: '0 10px 25px rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <input 
-                    type="text" 
-                    placeholder="Filtrar por nome..." 
-                    value={kpiSearch} 
-                    onChange={(e) => setKpiSearch(e.target.value)} 
-                    onClick={(e) => e.stopPropagation()} 
-                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-glass)', borderRadius: '4px', padding: '4px 8px', fontSize: '0.7rem', color: 'white', outline: 'none' }}
-                  />
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', overflowY: 'auto', maxHeight: '160px' }}>
-                    {prontosLeads.filter(l => l.nome?.toLowerCase().includes(kpiSearch.toLowerCase())).map(lead => (
-                      <div 
-                        key={lead.id} 
-                        onClick={(e) => { e.stopPropagation(); scrollToAndExpandLead(lead.id); }}
-                        style={{ padding: '6px 8px', fontSize: '0.75rem', cursor: 'pointer', borderRadius: '4px', borderBottom: '1px solid rgba(255,255,255,0.03)', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                        onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.08)'}
-                        onMouseLeave={(e) => e.target.style.background = 'none'}
-                      >
-                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '120px' }}>
-                          {lead.nome || 'Sem nome'}
-                        </span>
-                        <span style={{ fontSize: '0.65rem', padding: '2px 6px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.2)', color: '#34d399', fontWeight: 'bold' }}>
-                          {lead.score_qualificacao}%
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
         </div>
 
         {/* Perdidos */}
-        <div className="glass-card" style={{ padding: '20px', position: 'relative' }}>
+        <div 
+          className="glass-card" 
+          onClick={() => setFilterStatus('perdido')}
+          style={{ 
+            padding: '20px', 
+            position: 'relative',
+            cursor: 'pointer',
+            transition: 'all 0.3s ease',
+            border: filterStatus === 'perdido' ? '2px solid #ef4444' : '1px solid var(--border-glass)',
+            boxShadow: filterStatus === 'perdido' ? '0 0 15px rgba(239, 68, 68, 0.4)' : '',
+            transform: filterStatus === 'perdido' ? 'scale(1.02)' : 'none'
+          }}
+        >
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
             <UserX style={{ color: '#ef4444' }} />
-            <span style={{ fontSize: '0.8rem', color: '#ef4444' }}>Atenção</span>
+            <span style={{ fontSize: '0.8rem', color: '#ef4444', fontWeight: 'bold' }}>Atenção</span>
           </div>
           <h3 style={{ fontSize: '1.5rem', fontWeight: '700' }}>{perdidosLeads.length}</h3>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Leads Perdidos</p>
-          
-          {perdidosLeads.length > 0 && (
-            <div style={{ marginTop: '8px' }}>
-              <button 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setActiveKpiDropdown(activeKpiDropdown === 'perdidos' ? null : 'perdidos');
-                  setKpiSearch('');
-                }}
-                style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '0.75rem', cursor: 'pointer', padding: 0, fontWeight: '600' }}
-              >
-                {activeKpiDropdown === 'perdidos' ? 'Fechar lista' : 'Ver leads'}
-              </button>
-              {activeKpiDropdown === 'perdidos' && (
-                <div className="glass-card" style={{ position: 'absolute', top: '100%', left: 0, width: '240px', maxHeight: '250px', overflowY: 'auto', zIndex: 9999, marginTop: '6px', padding: '10px', background: 'rgba(15, 15, 20, 0.98)', boxShadow: '0 10px 25px rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <input 
-                    type="text" 
-                    placeholder="Filtrar por nome..." 
-                    value={kpiSearch} 
-                    onChange={(e) => setKpiSearch(e.target.value)} 
-                    onClick={(e) => e.stopPropagation()} 
-                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-glass)', borderRadius: '4px', padding: '4px 8px', fontSize: '0.7rem', color: 'white', outline: 'none' }}
-                  />
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', overflowY: 'auto', maxHeight: '160px' }}>
-                    {perdidosLeads.filter(l => l.nome?.toLowerCase().includes(kpiSearch.toLowerCase())).map(lead => (
-                      <div 
-                        key={lead.id} 
-                        onClick={(e) => { e.stopPropagation(); scrollToAndExpandLead(lead.id); }}
-                        style={{ padding: '6px 8px', fontSize: '0.75rem', cursor: 'pointer', borderRadius: '4px', borderBottom: '1px solid rgba(255,255,255,0.03)', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                        onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.08)'}
-                        onMouseLeave={(e) => e.target.style.background = 'none'}
-                      >
-                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '120px' }}>
-                          {lead.nome || 'Sem nome'}
-                        </span>
-                        <span style={{ fontSize: '0.65rem', padding: '2px 6px', borderRadius: '10px', background: 'rgba(239, 68, 68, 0.2)', color: '#f87171', fontWeight: 'bold' }}>
-                          {getDaysSinceLastInteraction(lead.ultima_interacao)}d inativo
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
         </div>
       </div>
 
@@ -396,6 +288,7 @@ export default function Leads() {
           onChange={(e) => setFilterStatus(e.target.value)}
         >
           <option value="all" style={{ backgroundColor: '#1e1e24', color: 'white' }}>Todos os Status</option>
+          <option value="qualificar" style={{ backgroundColor: '#1e1e24', color: 'white' }}>Para Qualificar</option>
           <option value="frio" style={{ backgroundColor: '#1e1e24', color: 'white' }}>Frio</option>
           <option value="morno" style={{ backgroundColor: '#1e1e24', color: 'white' }}>Morno</option>
           <option value="quente" style={{ backgroundColor: '#1e1e24', color: 'white' }}>Quente</option>
@@ -404,6 +297,37 @@ export default function Leads() {
           <option value="perdido" style={{ backgroundColor: '#1e1e24', color: 'white' }}>Perdido</option>
         </select>
       </div>
+
+      {filterStatus !== 'all' && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px', fontSize: '0.85rem' }}>
+          <span style={{ color: 'var(--text-muted)' }}>Filtro ativo:</span>
+          <span style={{ 
+            padding: '6px 12px', 
+            borderRadius: '20px', 
+            background: 'rgba(255,255,255,0.05)', 
+            border: '1px solid var(--border-glass)',
+            color: 'white',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            fontSize: '0.8rem',
+            fontWeight: '600'
+          }}>
+            {filterStatus === 'qualificar' && 'Leads para Qualificar'}
+            {filterStatus === 'quente' && 'Leads Quentes'}
+            {filterStatus === 'pronto' && 'Prontos para Venda'}
+            {filterStatus === 'perdido' && 'Leads Perdidos'}
+            {!['qualificar', 'quente', 'pronto', 'perdido'].includes(filterStatus) && filterStatus}
+            <button 
+              onClick={() => setFilterStatus('all')}
+              style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontWeight: 'bold', fontSize: '1.1rem', padding: 0, lineHeight: 1, display: 'inline-flex', alignItems: 'center', marginLeft: '4px' }}
+              title="Limpar filtro"
+            >
+              ×
+            </button>
+          </span>
+        </div>
+      )}
 
       {/* Leads Table */}
       <div className="glass-card" style={{ overflow: 'hidden' }}>
