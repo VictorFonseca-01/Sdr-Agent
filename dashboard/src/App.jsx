@@ -36,7 +36,7 @@ function App() {
 
   return (
     <BrowserRouter>
-      <Toaster richColors position="top-right" />
+      <Toaster theme="dark" richColors position="top-right" />
       <NotificationListener session={session} />
       <Routes>
         <Route 

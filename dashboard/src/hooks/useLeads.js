@@ -20,15 +20,11 @@ export function useLeads() {
   useEffect(() => {
     fetchLeads(true);
 
-    const leadsSubscription = supabase
+        const leadsSubscription = supabase
       .channel('leads-board-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, (payload) => {
         console.log('Realtime Event received on Leads Kanban!', payload);
         fetchLeads(false);
-        toast.success("Nova mensagem ou lead processado! Kanban sincronizado.", {
-          description: "Os dados foram atualizados automaticamente via Supabase Realtime.",
-          duration: 4000
-        });
       })
       .subscribe();
 
