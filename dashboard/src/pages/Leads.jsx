@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, LogOut, RefreshCw, BarChart2, Kanban } from 'lucide-react';
 import { useLeads } from '../hooks/useLeads';
+import { toast } from 'sonner';
 import MetricsCards from '../components/MetricsCards';
 import KanbanBoard from '../components/KanbanBoard';
 import SlideOutPanel from '../components/SlideOutPanel';
@@ -8,7 +9,7 @@ import AnalyticsView from '../components/AnalyticsView';
 import { supabase } from '../lib/supabase';
 
 export default function Leads() {
-  const { leads, fetchLeads, toast, isLeadLost, getLeadColumn, updateLeadStatus } = useLeads();
+  const { leads, fetchLeads, isLeadLost, getLeadColumn, updateLeadStatus } = useLeads();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [activeLead, setActiveLead] = useState(null);
@@ -68,9 +69,10 @@ export default function Leads() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'notificar-vendedor', lead_id: lead.id, lead_data: lead })
       });
-      toast.success && toast.success('Vendedor notificado com sucesso!');
+      toast.success('Vendedor notificado com sucesso!');
     } catch (e) {
       console.error(e);
+      toast.error('Erro ao notificar vendedor.');
     }
   };
 
@@ -197,13 +199,7 @@ export default function Leads() {
         </div>
       </div>
 
-      {toast && (
-        <div style={{ 
-          position: 'fixed', top: '20px', right: '20px', background: 'rgba(16, 185, 129, 0.2)', border: '1px solid #10b981', color: '#10b981', padding: '12px 20px', borderRadius: '8px', zIndex: 9999, display: 'flex', alignItems: 'center', gap: '10px', backdropFilter: 'blur(10px)'
-        }}>
-          {toast.message}
-        </div>
-      )}
+
 
       <MetricsCards 
         leads={leads}

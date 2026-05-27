@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { toast } from 'sonner';
 
 export function useLeads() {
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [toast, setToast] = useState(null);
 
   const fetchLeads = async (showLoading = true) => {
     if (showLoading) setLoading(true);
@@ -23,10 +23,12 @@ export function useLeads() {
     const leadsSubscription = supabase
       .channel('leads-board-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, (payload) => {
-        console.log('Realtime Event received no Leads Kanban!', payload);
+        console.log('Realtime Event received on Leads Kanban!', payload);
         fetchLeads(false);
-        setToast({ message: "Nova mensagem ou lead processado! Kanban sincronizado.", type: "success" });
-        setTimeout(() => setToast(null), 4000);
+        toast.success("Nova mensagem ou lead processado! Kanban sincronizado.", {
+          description: "Os dados foram atualizados automaticamente via Supabase Realtime.",
+          duration: 4000
+        });
       })
       .subscribe();
 
@@ -63,9 +65,22 @@ export function useLeads() {
   };
 
   const updateLeadStatus = async (leadId, novoStatus, novaTemperatura) => {
+    const leadName = leads.find(l => l.id === leadId)?.nome || "Lead";
     setLeads(prev => prev.map(l => l.id === leadId ? { ...l, temperatura: novaTemperatura, status_funil: novoStatus } : l));
-    await supabase.from('leads').update({ temperatura: novaTemperatura, status_funil: novoStatus }).eq('id', leadId);
+    
+    const { error } = await supabase
+      .from('leads')
+      .update({ temperatura: novaTemperatura, status_funil: novoStatus })
+      .eq('id', leadId);
+
+    if (error) {
+      toast.error(`Erro ao atualizar status de ${leadName}`);
+      fetchLeads(false);
+    } else {
+      toast.success(`${leadName} atualizado para "${novoStatus}"`);
+    }
   };
 
-  return { leads, setLeads, loading, fetchLeads, toast, setToast, isLeadLost, getLeadColumn, updateLeadStatus };
+  return { leads, setLeads, loading, fetchLeads, isLeadLost, getLeadColumn, updateLeadStatus };
 }
+
