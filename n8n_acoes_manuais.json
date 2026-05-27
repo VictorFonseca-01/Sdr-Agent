@@ -1,0 +1,267 @@
+{
+  "meta": {
+    "instanceId": "2e39d2a6fc33498f4410351f589ed65104bce5813fc456d2b984b9d0e9a374e9"
+  },
+  "nodes": [
+    {
+      "id": "ek24g2tk-kxpu",
+      "name": "Webhook Qualificar IA",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        100,
+        200
+      ],
+      "parameters": {
+        "path": "qualificar-ia",
+        "options": {},
+        "httpMethod": "POST"
+      }
+    },
+    {
+      "id": "3xjgvj5t-knic",
+      "name": "Webhook Notificar Vendedor",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        100,
+        500
+      ],
+      "parameters": {
+        "path": "notificar-vendedor",
+        "options": {},
+        "httpMethod": "POST"
+      }
+    },
+    {
+      "id": "67ibmzc0-g159",
+      "name": "Ler Lead Supabase (IA)",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        300,
+        200
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "3Hp4m3KaX23RwFHq",
+          "name": "Supabase account 2"
+        }
+      },
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "leads",
+        "returnAll": false,
+        "limit": 1,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "keyValue": "={{ $json.body.lead_id }}",
+              "operation": "equals"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "ymsce980-56ff",
+      "name": "Ler Lead Supabase (Vendedor)",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        300,
+        500
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "3Hp4m3KaX23RwFHq",
+          "name": "Supabase account 2"
+        }
+      },
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "leads",
+        "returnAll": false,
+        "limit": 1,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "keyValue": "={{ $json.body.lead_id }}",
+              "operation": "equals"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "d6abznz2-2vfu",
+      "name": "Gerar Msg Proativa",
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        500,
+        200
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "2BXU3rUDkK69jCwT",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      },
+      "parameters": {
+        "model": "models/gemini-1.5-flash",
+        "messages": {
+          "messageValues": [
+            {
+              "type": "user",
+              "message": "O lead {{ $json.nome }} deixou o número. Mande uma mensagem curta de WhatsApp (1 parágrafo) super amigável e natural, puxando assunto para entender melhor o interesse dele em: {{ $json.produto_interesse || 'imóveis' }}. Se ele tiver perfil {{ $json.perfil_psicologico }}, adapte. Aja como um humano."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Normalizar Payload').first().json.WHATSAPP_API_URL }}{{ $('Normalizar Payload').first().json.WHATSAPP_ENDPOINT }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $('Normalizar Payload').first().json.WHATSAPP_API_TOKEN }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $('Normalizar Payload').first().json.GERENTE_TELEFONE }}\",\n  \"options\": {\n    \"delay\": 1200,\n    \"presence\": \"composing\"\n  },\n  \"textMessage\": {\n    \"text\": {{ JSON.stringify($('Preparar Alerta Gerente').first().json.mock_whatsapp_gerente) }}\n  }\n}",
+        "options": {},
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $('Normalizar Payload').first().json.GERENTE_PHONE || '5511999999999' }}"
+            },
+            {
+              "name": "text",
+              "value": "🚨 *Novo Lead Pronto para Venda!* 🚨\n\nNome: {{ $json.nome }}\nTelefone: {{ $json.telefone }}\nInteresse: {{ $json.produto_interesse }}\n\n*Perfil:* {{ $json.perfil_psicologico }}\n*Urgência:* {{ $json.nivel_urgencia }}\n\n📲 *Clique para chamar:* wa.me/{{ $json.telefone }}"
+            }
+          ]
+        }
+      },
+      "id": "yz4sndnd-ybw9",
+      "name": "WhatsApp Lead (IA)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        700,
+        200
+      ],
+      "notesInFlow": true,
+      "continueOnFail": true,
+      "notes": "Tratamento de Erro ativado (Continue On Fail)"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Normalizar Payload').first().json.WHATSAPP_API_URL }}{{ $('Normalizar Payload').first().json.WHATSAPP_ENDPOINT }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $('Normalizar Payload').first().json.WHATSAPP_API_TOKEN }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $('Normalizar Payload').first().json.GERENTE_TELEFONE }}\",\n  \"options\": {\n    \"delay\": 1200,\n    \"presence\": \"composing\"\n  },\n  \"textMessage\": {\n    \"text\": {{ JSON.stringify($('Preparar Alerta Gerente').first().json.mock_whatsapp_gerente) }}\n  }\n}",
+        "options": {},
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $('Normalizar Payload').first().json.GERENTE_PHONE || '5511999999999' }}"
+            },
+            {
+              "name": "text",
+              "value": "🚨 *Novo Lead Pronto para Venda!* 🚨\n\nNome: {{ $json.nome }}\nTelefone: {{ $json.telefone }}\nInteresse: {{ $json.produto_interesse }}\n\n*Perfil:* {{ $json.perfil_psicologico }}\n*Urgência:* {{ $json.nivel_urgencia }}\n\n📲 *Clique para chamar:* wa.me/{{ $json.telefone }}"
+            }
+          ]
+        }
+      },
+      "id": "0e63bmbs-fr65",
+      "name": "WhatsApp Gerente",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        500,
+        500
+      ],
+      "notesInFlow": true,
+      "continueOnFail": true,
+      "notes": "Tratamento de Erro ativado (Continue On Fail)"
+    }
+  ],
+  "connections": {
+    "Webhook Qualificar IA": {
+      "main": [
+        [
+          {
+            "node": "Ler Lead Supabase (IA)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ler Lead Supabase (IA)": {
+      "main": [
+        [
+          {
+            "node": "Gerar Msg Proativa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gerar Msg Proativa": {
+      "main": [
+        [
+          {
+            "node": "WhatsApp Lead (IA)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Notificar Vendedor": {
+      "main": [
+        [
+          {
+            "node": "Ler Lead Supabase (Vendedor)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ler Lead Supabase (Vendedor)": {
+      "main": [
+        [
+          {
+            "node": "WhatsApp Gerente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

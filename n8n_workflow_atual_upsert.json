@@ -144,7 +144,9 @@
               "fieldValue": "=[]"
             }
           ]
-        }
+        },
+        "operation": "upsert",
+        "columns": "telefone"
       },
       "name": "Criar Novo Lead",
       "type": "n8n-nodes-base.supabase",

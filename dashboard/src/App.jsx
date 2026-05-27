@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { supabase } from './lib/supabase';
 import Login from './pages/Login';
 import Leads from './pages/Leads';
+import NotificationListener from './components/NotificationListener';
+import { Toaster } from 'sonner';
 import './App.css';
 
 function App() {
@@ -34,6 +36,8 @@ function App() {
 
   return (
     <BrowserRouter>
+      <Toaster richColors position="top-right" />
+      <NotificationListener session={session} />
       <Routes>
         <Route 
           path="/login" 

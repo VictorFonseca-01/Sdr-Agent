@@ -11,10 +11,10 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        61568,
-        22592
+        41968,
+        12816
       ],
-      "id": "7218fe5a-3b5c-4650-a5ef-b5bd4fa25142",
+      "id": "edb15080-df00-41a7-a16d-263f06b43d4e",
       "webhookId": "bd21ec3b-62f4-417d-b06c-650f1e6645ec"
     },
     {
@@ -70,10 +70,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        61776,
-        22592
+        42176,
+        12816
       ],
-      "id": "50273281-d80c-42df-8692-dab76e005a36"
+      "id": "60baf191-23c3-4e86-a22e-7918415bf39e"
     },
     {
       "parameters": {
@@ -94,11 +94,11 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        61968,
-        22592
+        42368,
+        12816
       ],
       "alwaysOutputData": true,
-      "id": "e35e2864-a760-4170-849b-0bb24586044e",
+      "id": "df80da3a-d840-4bad-8d58-a8e2f2894375",
       "credentials": {
         "supabaseApi": {
           "id": "3Hp4m3KaX23RwFHq",
@@ -121,10 +121,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        62176,
-        22592
+        42576,
+        12816
       ],
-      "id": "62ecc455-8f71-4f53-b5c3-d91f05deff5a"
+      "id": "e8f0b06a-98e4-4ce0-853e-25144102cf87"
     },
     {
       "parameters": {
@@ -150,10 +150,10 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        62368,
-        22464
+        42768,
+        12688
       ],
-      "id": "8e29cbc2-c9c1-4cd8-b85e-8cf707514f84",
+      "id": "7b9273ae-c6ac-4577-8262-711f0453709e",
       "credentials": {
         "supabaseApi": {
           "id": "3Hp4m3KaX23RwFHq",
@@ -167,10 +167,10 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        62576,
-        22592
+        42976,
+        12816
       ],
-      "id": "bb4026fe-6137-44c6-b237-d7896ea349a0"
+      "id": "43cc4be2-7bfc-41a8-b707-498c7569a926"
     },
     {
       "parameters": {
@@ -180,10 +180,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        62768,
-        22592
+        43168,
+        12816
       ],
-      "id": "cb46ad83-2d91-472b-afcf-28ca33a4970b"
+      "id": "e3650e4d-0801-403a-90cb-905082cff6ab"
     },
     {
       "parameters": {
@@ -200,11 +200,11 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        62976,
-        22592
+        43376,
+        12816
       ],
       "notesInFlow": true,
-      "id": "1f3ca574-4450-40b1-bf48-143e558d1989",
+      "id": "6d24f68f-fbed-4854-a000-fc44d1187156",
       "notes": "Mude para FALSE para usar a OpenAI real"
     },
     {
@@ -215,10 +215,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        63536,
-        22464
+        43936,
+        12688
       ],
-      "id": "1ee63875-7995-4d71-b03f-a0355dc40484"
+      "id": "721fb16d-3286-43c3-9ba1-73d349b6b506"
     },
     {
       "parameters": {
@@ -228,10 +228,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        63744,
-        22592
+        44144,
+        12816
       ],
-      "id": "a890994e-91f2-4cba-a149-cced0e236a9f"
+      "id": "7fa2d22f-255f-4efe-bd68-bb91b0bd37cf"
     },
     {
       "parameters": {
@@ -331,11 +331,11 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        63936,
-        22592
+        44336,
+        12816
       ],
       "alwaysOutputData": true,
-      "id": "3f67c0fb-5f59-49e7-b8a8-aa8d7d02c7d9",
+      "id": "adb4c78a-48b2-4e9a-a047-0b008dd50d92",
       "credentials": {
         "supabaseApi": {
           "id": "3Hp4m3KaX23RwFHq",
@@ -376,10 +376,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        64960,
-        22576
+        45360,
+        12800
       ],
-      "id": "4f0a8b26-8b55-4ab0-8b04-17b6cda052d1"
+      "id": "e483cf5a-98eb-4200-b635-189cdc368f43"
     },
     {
       "parameters": {
@@ -389,10 +389,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        64144,
-        22592
+        44544,
+        12816
       ],
-      "id": "097681a4-6519-413a-9903-b462f624aa89"
+      "id": "2e40777f-a7b8-4fe5-8eeb-7c93e1c7b380"
     },
     {
       "parameters": {
@@ -402,10 +402,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        64352,
-        22592
+        44752,
+        12816
       ],
-      "id": "955f9f2c-aa05-42a2-9da2-664d3e291abf"
+      "id": "8fc0bca4-a123-416c-b0ac-aa716b36f965"
     },
     {
       "parameters": {
@@ -425,13 +425,13 @@
         "jsonBody": "={\n  \"number\": \"{{ $('Normalizar Payload').first().json.telefone }}\",\n  \"options\": {\n    \"delay\": 1200,\n    \"presence\": \"composing\"\n  },\n  \"textMessage\": {\n    \"text\": {{ JSON.stringify($('Preparar Resposta Cliente').first().json.resposta_para_usuario) }}\n  }\n}",
         "options": {}
       },
-      "id": "54926b98-6ede-46de-89a6-136e38584393",
+      "id": "85fff67b-1977-4c38-b7ba-58a7d6524256",
       "name": "Enviar WhatsApp Cliente",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [
-        58352,
-        20816
+        38752,
+        11040
       ],
       "notesInFlow": true,
       "continueOnFail": true,
@@ -455,13 +455,13 @@
         "jsonBody": "={\n  \"number\": \"{{ $('Normalizar Payload').first().json.GERENTE_TELEFONE }}\",\n  \"options\": {\n    \"delay\": 1200,\n    \"presence\": \"composing\"\n  },\n  \"textMessage\": {\n    \"text\": {{ JSON.stringify($('Preparar Alerta Gerente').first().json.mock_whatsapp_gerente) }}\n  }\n}",
         "options": {}
       },
-      "id": "a12fba8d-2eca-4c03-9822-42f45092f143",
+      "id": "66be5217-f670-46c4-91c9-11ddd9f3fb90",
       "name": "Enviar WhatsApp Gerente",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [
-        58752,
-        20912
+        39152,
+        11136
       ],
       "notesInFlow": true,
       "continueOnFail": true,
@@ -488,10 +488,10 @@
       "type": "@n8n/n8n-nodes-langchain.googleGemini",
       "typeVersion": 1.2,
       "position": [
-        63328,
-        22608
+        43728,
+        12832
       ],
-      "id": "f6565923-8511-4e72-813c-3efd150702f2",
+      "id": "09de93ac-8f5c-4064-ad96-0d159637ee66",
       "name": "Message a model",
       "credentials": {
         "googlePalmApi": {
@@ -508,19 +508,90 @@
         "html": "=<h2>🚨 Novo Lead Qualificado Recebido!</h2>\n<p>O SDR Agent acabou de qualificar um lead quente e o encaminhou para você.</p>\n<hr>\n<ul>\n  <li><strong>Nome:</strong> {{$('Atualizar Lead (Supabase)').first().json.nome}}</li>\n  <li><strong>Telefone:</strong> {{$('Atualizar Lead (Supabase)').first().json.telefone}}</li>\n  <li><strong>Score:</strong> {{$('Atualizar Lead (Supabase)').first().json.score_qualificacao}} / 100</li>\n  <li><strong>Status:</strong> {{$('Atualizar Lead (Supabase)').first().json.status_lead}}</li>\n</ul>\n<p><strong>Resumo do Atendimento:</strong></p>\n<p><em>{{$('Processar Resposta JSON').first().json.resumo_atendimento}}</em></p>\n<br>\n<p>Acesse o <a href=\"http://localhost:5173/\">Dashboard</a> para ver o histórico completo das mensagens e assumir o atendimento no WhatsApp!</p>\n",
         "options": {}
       },
-      "id": "39284502-8a05-4227-b7c2-b89089f22840",
+      "id": "68548c80-479e-49e9-b72a-1e53fbf377fb",
       "name": "Enviar Email Gerente",
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 2.1,
       "position": [
-        65328,
-        22576
+        45728,
+        12800
       ],
       "webhookId": "3f181878-b87a-4883-baea-7d55373867ca",
       "credentials": {
         "smtp": {
           "id": "lGYexJRlXu6311DL",
           "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "id": "4jymvpio-0mug",
+      "name": "Webhook Notificar Vendedor",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        42100,
+        13100
+      ],
+      "parameters": {
+        "path": "notificar-vendedor",
+        "options": {
+          "respondWithCors": true
+        },
+        "httpMethod": "POST"
+      }
+    },
+    {
+      "id": "hlv70e3b-fsi3",
+      "name": "Ler Lead Supabase (Vendedor)",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        42300,
+        13100
+      ],
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "leads",
+        "matchType": "any",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.body.lead_id }}"
+            }
+          ]
+        }
+      },
+      "credentials": {
+        "supabaseApi": {
+          "id": "oG43E1W2Y6E3TItu",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "id": "sycqdzga-6umy",
+      "name": "WhatsApp Gerente",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        42500,
+        13100
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.evolution_url || \"http://localhost:8080\" }}/message/sendText/wpp",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"number\": \"5534998393527\", \"text\": \"🚨 *Atenção Gerente!* O Vendedor solicitou que você qualifique o lead manualmente!\\n\\n👤 *Lead:* {{ $json.nome || \\\"Sem Nome\\\" }}\\n📱 *Telefone:* {{ $json.telefone }}\\n💬 *Mensagem Original:* {{ $json.mensagem_original || \\\"N/A\\\" }}\\n\\nEntre no Dashboard para ver mais detalhes!\" }",
+        "options": {}
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "Y8WwZlU9aWnB0d9u",
+          "name": "Evolution API (Header Auth)"
         }
       }
     }
@@ -721,6 +792,28 @@
         [
           {
             "node": "Processar Resposta JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Notificar Vendedor": {
+      "main": [
+        [
+          {
+            "node": "Ler Lead Supabase (Vendedor)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ler Lead Supabase (Vendedor)": {
+      "main": [
+        [
+          {
+            "node": "WhatsApp Gerente",
             "type": "main",
             "index": 0
           }

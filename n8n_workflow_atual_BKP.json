@@ -2,20 +2,242 @@
   "nodes": [
     {
       "parameters": {
-        "httpMethod": "POST",
-        "path": "lead-webhook",
-        "responseMode": "responseNode",
-        "options": {}
+        "tableId": "lead_messages",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "lead_id",
+              "fieldValue": "={{ $json.lead_id }}"
+            },
+            {
+              "fieldId": "tenant_id",
+              "fieldValue": "={{ $('Juntar Fluxos').first().json.tenant_id }}"
+            },
+            {
+              "fieldId": "sender",
+              "fieldValue": "sdr_ia"
+            },
+            {
+              "fieldId": "content",
+              "fieldValue": "={{ $json.resposta_para_usuario }}"
+            }
+          ]
+        }
       },
-      "name": "Webhook Entrada",
-      "type": "n8n-nodes-base.webhook",
+      "name": "Salvar Resposta da IA",
+      "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        7552,
-        3248
+        14336,
+        4880
       ],
-      "id": "83322899-32cc-4823-a7a2-d4e4e78ae47e",
-      "webhookId": "bd21ec3b-62f4-417d-b06c-650f1e6645ec"
+      "id": "1f462c74-f0fe-45dd-a93f-c664b9e35b1f",
+      "credentials": {
+        "supabaseApi": {
+          "id": "3Hp4m3KaX23RwFHq",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "lead_messages",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "lead_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Juntar Fluxos').first().json.id }}"
+            }
+          ]
+        }
+      },
+      "name": "Buscar Histórico de Mensagens",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        13264,
+        4864
+      ],
+      "id": "e4157ce8-f550-422e-a1b8-4f95d11cc356",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "3Hp4m3KaX23RwFHq",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "lead_messages",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "lead_id",
+              "fieldValue": "={{ $('Juntar Fluxos').first().json.id }}"
+            },
+            {
+              "fieldId": "tenant_id",
+              "fieldValue": "={{ $('Juntar Fluxos').first().json.tenant_id }}"
+            },
+            {
+              "fieldId": "sender",
+              "fieldValue": "client"
+            },
+            {
+              "fieldId": "content",
+              "fieldValue": "={{ $('Normalizar Payload').first().json.mensagem }}"
+            }
+          ]
+        }
+      },
+      "name": "Salvar Mensagem do Cliente",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        13088,
+        4864
+      ],
+      "id": "dfef8716-f90c-4275-a277-d06edeb22121",
+      "credentials": {
+        "supabaseApi": {
+          "id": "3Hp4m3KaX23RwFHq",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-3.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-3.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Você é um SDR (Sales Development Representative) imobiliário de alta performance. Seu tom é profissional, empático, direto e persuasivo. NUNCA peça desculpas excessivas.\nSua missão é extrair dados, qualificar o lead e gerar a próxima resposta, retornando EXCLUSIVAMENTE um objeto JSON válido.\n\nRegras de Comportamento:\n1. Faça APENAS UMA pergunta por vez para não cansar o lead.\n2. Se o lead já passou informações suficientes (Orçamento e Região ou Orçamento e Produto) e o score passar de 80, o status deve ser \"Quente\" ou \"Pronto para Vendas\" e encaminhar_para_consultor DEVE ser true.\n3. Se encaminhar_para_consultor for true, sua resposta_para_usuario DEVE ser uma mensagem de transição (ex: \"Perfeito! Seu perfil está ótimo. Vou acionar nosso corretor especialista na região para te chamar agora mesmo com as opções disponíveis.\").\n\nEstrutura do JSON exigida:\n{\n  \"resposta_para_usuario\": \"Sua resposta humanizada e natural como SDR.\",\n  \"status_funil\": \"Novo\" | \"Coletando Informações\" | \"Morno\" | \"Quente\" | \"Pronto para Vendas\",\n  \"score_qualificacao\": número de 0 a 100,\n  \"temperatura\": \"Frio\" | \"Morno\" | \"Quente\" | \"Pronto para Vendas\",\n  \"encaminhar_para_consultor\": boolean,\n  \"proxima_acao\": \"Continuar qualificação\" ou \"Encaminhar para consultor\",\n  \"resumo_sdr\": \"Resumo executivo contendo o que o lead quer e o orçamento.\",\n  \"dados_extraidos\": {\n    \"orcamento\": número ou null,\n    \"produto_interesse\": \"string\" ou null,\n    \"regiao_interesse\": \"string\" ou null,\n    \"tipo_imovel\": \"string\" ou null,\n    \"valor_entrada\": número ou null,\n    \"prazo_compra\": \"string\" ou null\n  }\n}\n\nHistórico da Conversa:\n{{ $('Preparar Contexto IA').first().json.historico_texto }}\n\nÚltima Mensagem do Cliente:\n{{ $('Preparar Contexto IA').first().json.mensagem_atual }}\n"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        13840,
+        4880
+      ],
+      "id": "5638db03-c191-4f7a-aec2-c42649f168a7",
+      "name": "Message a model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "2BXU3rUDkK69jCwT",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Normalizar Payload').first().json.WHATSAPP_API_URL }}{{ $('Normalizar Payload').first().json.WHATSAPP_ENDPOINT }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $('Normalizar Payload').first().json.WHATSAPP_API_TOKEN }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $('Normalizar Payload').first().json.GERENTE_TELEFONE }}\",\n  \"options\": {\n    \"delay\": 1200,\n    \"presence\": \"composing\"\n  },\n  \"textMessage\": {\n    \"text\": {{ JSON.stringify($('Notificar Gerente (Mock)').first().json.mock_whatsapp_gerente) }}\n  }\n}",
+        "options": {}
+      },
+      "id": "99f6566a-ae90-4df8-bf55-ce598cabba86",
+      "name": "Enviar WhatsApp Gerente",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        9152,
+        3184
+      ],
+      "notesInFlow": true,
+      "continueOnFail": true,
+      "notes": "Tratamento de Erro ativado (Continue On Fail)"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Normalizar Payload').first().json.WHATSAPP_API_URL }}{{ $('Normalizar Payload').first().json.WHATSAPP_ENDPOINT }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $('Normalizar Payload').first().json.WHATSAPP_API_TOKEN }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $('Normalizar Payload').first().json.telefone }}\",\n  \"options\": {\n    \"delay\": 1200,\n    \"presence\": \"composing\"\n  },\n  \"textMessage\": {\n    \"text\": {{ JSON.stringify($('Preparar Resposta Cliente').first().json.resposta_para_usuario) }}\n  }\n}",
+        "options": {}
+      },
+      "id": "13c2b27f-865e-41bf-901c-5eb5e236926e",
+      "name": "Enviar WhatsApp Cliente",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        8752,
+        3088
+      ],
+      "notesInFlow": true,
+      "continueOnFail": true,
+      "notes": "Tratamento de Erro ativado (Continue On Fail)"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        14928,
+        4864
+      ],
+      "id": "07fd5e71-de5c-4041-b7f1-cdb494485a1c"
+    },
+    {
+      "parameters": {
+        "jsCode": "const ambiente = $('Normalizar Payload').first().json.AMBIENTE || 'producao';\nconst resposta = $('Processar Resposta JSON').first().json.resposta_para_usuario;\nconst status_funil = $('Atualizar Lead (Supabase)').first().json.status_funil;\nconst ia_mode = $('Normalizar Payload').first().json.IA_MODE;\n\nlet result = {\n  resposta_para_usuario: resposta,\n  status: status_funil\n};\n\nif (ambiente === 'teste') {\n  result.debug_ia_usada = ia_mode;\n  result.debug_status_funil = status_funil;\n}\n\nreturn result;"
+      },
+      "name": "Preparar Resposta Cliente",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        14720,
+        4880
+      ],
+      "id": "fdba3a2b-601a-4f2a-95e6-b35f4fe84942"
+    },
+    {
+      "parameters": {},
+      "name": "Bypass (Sem Alerta)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        15392,
+        5056
+      ],
+      "id": "6a2984ba-f232-44a6-8416-2460f42fee0e"
     },
     {
       "parameters": {
@@ -23,215 +245,62 @@
         "values": {
           "string": [
             {
-              "name": "AMBIENTE",
-              "value": "teste"
+              "name": "mensagem_para_cliente",
+              "value": "={{ $json.mensagem_para_cliente }}"
             },
             {
-              "name": "IA_MODE",
-              "value": "real"
+              "name": "alerta_gerente",
+              "value": "={{ $json.alerta_gerente }}"
             },
             {
-              "name": "telefone",
-              "value": "={{ $json.body?.telefone || $json.telefone || $json.body?.from || $json.from }}"
+              "name": "debug_ia_usada",
+              "value": "={{ $json.debug_ia_usada }}"
             },
             {
-              "name": "mensagem",
-              "value": "={{ $json.body?.mensagem || $json.mensagem || $json.body?.text || $json.text }}"
+              "name": "debug_status_funil",
+              "value": "={{ $json.debug_status_funil }}"
             },
             {
-              "name": "nome",
-              "value": "={{ $json.body?.nome || $json.nome || $json.body?.senderName || $json.senderName }}"
-            },
-            {
-              "name": "WHATSAPP_API_URL",
-              "value": "https://httpbin.org"
-            },
-            {
-              "name": "WHATSAPP_API_TOKEN",
-              "value": "preencher_depois"
-            },
-            {
-              "name": "WHATSAPP_INSTANCE",
-              "value": "adao-imoveis"
-            },
-            {
-              "name": "GERENTE_TELEFONE",
-              "value": "55XXXXXXXXXXX"
-            },
-            {
-              "name": "WHATSAPP_ENDPOINT",
-              "value": "/post"
+              "name": "mock_whatsapp_gerente",
+              "value": "==🚨 *NOVO LEAD QUALIFICADO* 🚨\n\n👤 *Nome:* {{ $('Atualizar Lead (Supabase)').first().json.nome }}\n📞 *Telefone:* {{ $('Atualizar Lead (Supabase)').first().json.telefone }}\n\n🔥 *Temperatura:* {{ $('Atualizar Lead (Supabase)').first().json.temperatura }}\n📊 *Score:* {{ $('Atualizar Lead (Supabase)').first().json.score_qualificacao }}/100\n\n💡 *Resumo da IA (SDR):*\n{{ $('Atualizar Lead (Supabase)').first().json.resumo_sdr }}\n\n💰 *Dados do Lead:*\n- Interesse: {{ $('Atualizar Lead (Supabase)').first().json.produto_interesse || 'Não informado' }}\n- Orçamento: R$ {{ $('Atualizar Lead (Supabase)').first().json.orcamento || 'Não informado' }}\n- Entrada: R$ {{ $('Atualizar Lead (Supabase)').first().json.valor_entrada || 'Não informada' }}\n- Região: {{ $('Atualizar Lead (Supabase)').first().json.regiao_interesse || 'Não informada' }}\n\n💬 *Última mensagem do lead:*\n\"{{ $('Normalizar Payload').first().json.mensagem }}\"\n"
             }
           ]
         },
         "options": {}
       },
-      "name": "Normalizar Payload",
+      "name": "Notificar Gerente (Mock)",
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        7760,
-        3248
+        15440,
+        4848
       ],
-      "id": "eb48441f-a2a0-4e8b-af61-14f0440c6603"
-    },
-    {
-      "parameters": {
-        "operation": "getAll",
-        "tableId": "leads",
-        "returnAll": true,
-        "filters": {
-          "conditions": [
-            {
-              "keyName": "telefone",
-              "condition": "eq",
-              "keyValue": "={{$json.telefone}}"
-            }
-          ]
-        }
-      },
-      "name": "Consultar Lead",
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
-      "position": [
-        7952,
-        3248
-      ],
-      "alwaysOutputData": true,
-      "id": "869f2c62-cf31-48a7-b0ad-b8ea26f538bb",
-      "credentials": {
-        "supabaseApi": {
-          "id": "3Hp4m3KaX23RwFHq",
-          "name": "Supabase account 2"
-        }
-      }
+      "id": "6f963ffa-61f0-466b-9efe-c3fde269e1a0"
     },
     {
       "parameters": {
         "conditions": {
-          "string": [
+          "boolean": [
             {
-              "value1": "={{$json.id}}",
-              "operation": "isEmpty"
+              "value1": "={{ $('Processar Resposta JSON').first().json.updateData.score_qualificacao }}",
+              "operation": "largerEqual",
+              "value2": 80
+            },
+            {
+              "value1": "={{ $('Processar Resposta JSON').first().json.updateData.encaminhar_para_consultor }}",
+              "value2": true
             }
           ]
         }
       },
-      "name": "Novo Lead?",
+      "name": "Precisa de Gerente?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        8160,
-        3248
+        15168,
+        4752
       ],
-      "id": "b9c4637f-9b8b-4e64-8045-9eb00213eebf"
-    },
-    {
-      "parameters": {
-        "tableId": "leads",
-        "fieldsUi": {
-          "fieldValues": [
-            {
-              "fieldId": "telefone",
-              "fieldValue": "={{ $('Normalizar Payload').first().json.telefone }}"
-            },
-            {
-              "fieldId": "nome",
-              "fieldValue": "={{ $('Normalizar Payload').first().json.nome }}"
-            },
-            {
-              "fieldId": "historico_mensagens",
-              "fieldValue": "=[]"
-            }
-          ]
-        }
-      },
-      "name": "Criar Novo Lead",
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
-      "position": [
-        8352,
-        3120
-      ],
-      "id": "cfcfd038-4bdd-4460-b2f7-1e1b4d784e1a",
-      "credentials": {
-        "supabaseApi": {
-          "id": "3Hp4m3KaX23RwFHq",
-          "name": "Supabase account 2"
-        }
-      }
-    },
-    {
-      "parameters": {},
-      "name": "Juntar Fluxos",
-      "type": "n8n-nodes-base.noOp",
-      "typeVersion": 1,
-      "position": [
-        8560,
-        3248
-      ],
-      "id": "4c8196b0-e34e-4e3b-b458-3f93f63ece2b"
-    },
-    {
-      "parameters": {
-        "jsCode": "let payload = $('Normalizar Payload').first().json;\nlet lead = $json;\n\nif (!lead || !lead.telefone) {\n  lead = { telefone: payload.telefone, historico_mensagens: [] };\n}\n\nlet historico = lead.historico_mensagens || [];\nif (typeof historico === 'string') {\n  try { historico = JSON.parse(historico); } catch(e) { historico = []; }\n}\n\nlet historyText = historico.map(msg => `${msg.role === 'user' ? 'Cliente' : 'SDR'}: ${msg.content}`).join(\"\\n\");\nif (!historyText) historyText = \"Nenhuma interação anterior.\";\n\nlet missingFields = [];\nif (!lead.regiao_interesse) missingFields.push(\"regiao_interesse\");\nif (!lead.tipo_imovel) missingFields.push(\"tipo_imovel\");\nif (!lead.renda_mensal) missingFields.push(\"renda_mensal\");\nif (!lead.valor_entrada) missingFields.push(\"valor_entrada\");\nif (!lead.prazo_compra) missingFields.push(\"prazo_compra\");\n\nreturn {\n  telefone: payload.telefone,\n  lead_id: lead.id,\n  nome: lead.nome || payload.nome,\n  mensagem_atual: payload.mensagem,\n  historico_texto: historyText,\n  historico_array: historico,\n  status_atual: lead.status_funil || 'frio',\n  campos_faltantes: missingFields.join(\", \"),\n  lead_completo: lead\n};\n"
-      },
-      "name": "Preparar Contexto IA",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        8752,
-        3248
-      ],
-      "id": "a14c5270-a84d-4403-9d9f-e6ef9cb3cae3"
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "string": [
-            {
-              "value1": "={{ $('Normalizar Payload').first().json.IA_MODE }}",
-              "value2": "mock"
-            }
-          ]
-        }
-      },
-      "name": "Usar Mock IA?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
-      "position": [
-        8960,
-        3248
-      ],
-      "notesInFlow": true,
-      "id": "b6f45e07-76ab-4c17-b55c-24d45969c2b1",
-      "notes": "Mude para FALSE para usar a OpenAI real"
-    },
-    {
-      "parameters": {
-        "jsCode": "// Normalizar Texto\nconst normalize = (text) => {\n  if (!text) return \"\";\n  return text.toLowerCase()\n    .normalize('NFD')\n    .replace(/[\\u0300-\\u036f]/g, '');\n};\n\nconst payload = $('Normalizar Payload').first().json;\nconst mensagemOriginal = payload.mensagem || \"\";\nconst msg = normalize(mensagemOriginal);\n\nlet score = 0;\nlet dadosExtraidos = {\n  orcamento: null,\n  prazo_compra: null,\n  urgencia: \"baixa\",\n  forma_pagamento: null,\n  produto_interesse: null\n};\n\n// 1. Detectar Valores Monetários (Regex)\nconst moneyRegex = /(?:r\\$|rs|\\$)?\\s?(\\d+(?:[.,]\\d+)*)\\s?(mil|k|milhoes|m)?/gi;\nconst matchMoney = moneyRegex.exec(msg);\nif (matchMoney) {\n    let valorStr = matchMoney[1];\n    if (valorStr.includes('.') && valorStr.includes(',')) {\n        valorStr = valorStr.replace(/\\./g, '').replace(',', '.');\n    } else if (valorStr.includes(',')) {\n        valorStr = valorStr.replace(',', '.');\n    } else if (valorStr.includes('.') && valorStr.length > 3 && valorStr.split('.').pop().length === 3) {\n        valorStr = valorStr.replace(/\\./g, '');\n    }\n    \n    let valor = parseFloat(valorStr);\n    let sufixo = matchMoney[2] ? matchMoney[2].toLowerCase() : '';\n    if (sufixo === 'mil' || sufixo === 'k') valor *= 1000;\n    if (sufixo === 'milhoes' || sufixo === 'm') valor *= 1000000;\n    dadosExtraidos.orcamento = valor;\n    score += 20;\n} else if (msg.match(/tenho|possuo|disponho|orcamento|investir|entrada/)) {\n    score += 20;\n}\n\n// 2. Necessidade clara / Produto\nif (msg.match(/comprar|adquirir|contratar|fechar|agendar|apartamento|casa|imovel|unidade/)) {\n    score += 20;\n    if (msg.includes('apartamento')) dadosExtraidos.produto_interesse = 'Apartamento';\n    else if (msg.includes('casa')) dadosExtraidos.produto_interesse = 'Casa';\n}\n\n// 3. Prazo / Urgência\nif (msg.match(/hoje|agora|urgente|esta semana|este mes|imediatamente/)) {\n    score += 20;\n    dadosExtraidos.urgencia = \"alta\";\n    if (msg.includes('mes')) dadosExtraidos.prazo_compra = \"Este mês\";\n    if (msg.includes('semana')) dadosExtraidos.prazo_compra = \"Esta semana\";\n}\n\n// 4. Forma de Pagamento\nif (msg.match(/financiado|financiamento|a vista|consorcio|pagar/)) {\n    score += 20;\n    if (msg.includes('financiamento')) dadosExtraidos.forma_pagamento = \"Financiamento\";\n    else if (msg.includes('a vista')) dadosExtraidos.forma_pagamento = \"À vista\";\n}\n\n// 5. Interesse Alto\nif (msg.match(/quero comprar|tenho interesse|quero agendar|quero fechar|agendar visita|tenho urgencia/)) {\n    score += 20;\n}\n\nscore = Math.min(score, 100);\n\n// Atribuição de Temperatura e Status\nlet temperatura = \"Frio\";\nlet status_funil = \"Novo\";\n\nif (score >= 90) { temperatura = \"Pronto para Vendas\"; status_funil = \"Pronto para Vendas\"; }\nelse if (score >= 70) { temperatura = \"Quente\"; status_funil = \"Quente\"; }\nelse if (score >= 40) { temperatura = \"Morno\"; status_funil = \"Morno\"; }\nelse if (score > 0) { temperatura = \"Frio\"; status_funil = \"Coletando Informações\"; }\n\nconst encaminhar = (score >= 80 && (temperatura === \"Quente\" || temperatura === \"Pronto para Vendas\"));\nconst proximaAcao = encaminhar ? \"Encaminhar para consultor\" : \"Continuar qualificação\";\n\n// Respostas\nlet resposta = \"Olá! Será um prazer ajudar. Pode me contar um pouco mais sobre o que você está procurando?\";\nif (status_funil === \"Coletando Informações\" || status_funil === \"Morno\") {\n    resposta = \"Perfeito. Para entender melhor o seu perfil, poderia informar sua faixa de investimento e em quanto tempo pretende tomar a decisão?\";\n} else if (status_funil === \"Quente\") {\n    resposta = \"Excelente. Com base nas informações fornecidas, seu perfil está alinhado. Vou encaminhar seus dados para um consultor especializado.\";\n} else if (status_funil === \"Pronto para Vendas\") {\n    resposta = \"Ótimo! Seu interesse foi identificado como prioritário e seu atendimento será encaminhado ao consultor responsável.\";\n}\n\n// Resumo SDR\nlet resumo = `Lead interessado em ${dadosExtraidos.produto_interesse || 'imóvel'}.`;\nif (dadosExtraidos.orcamento) resumo += ` Orçamento: R$ ${dadosExtraidos.orcamento.toLocaleString('pt-BR')}.`;\nif (dadosExtraidos.prazo_compra) resumo += ` Prazo: ${dadosExtraidos.prazo_compra}.`;\n\nconst mockJson = {\n    resposta_para_usuario: resposta,\n    score_qualificacao: score,\n    temperatura: temperatura,\n    status_funil: status_funil,\n    encaminhar_para_consultor: encaminhar,\n    resumo_sdr: resumo,\n    dados_extraidos: dadosExtraidos,\n    proxima_acao: proximaAcao\n};\n\nreturn {\n  message: { content: JSON.stringify(mockJson, null, 2) }\n};"
-      },
-      "name": "Mock IA",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        9520,
-        3120
-      ],
-      "id": "4b1cbaed-f9d9-4686-9ea2-86f7c76affaa"
-    },
-    {
-      "parameters": {
-        "jsCode": "// 1. Busca a resposta em todos os lugares possíveis (Gemini ou OpenAI)\nlet responseText = $json?.content?.parts?.[0]?.text || $json.text || ($json.message && $json.message.content) || \"\";\n\nlet parsed = {};\ntry {\n  // 2. Limpa formatações e tenta converter para JSON\n  let cleaned = responseText.replace(/^```(json)?/im, \"\").replace(/```$/im, \"\").trim();\n  parsed = JSON.parse(cleaned);\n} catch(e) {\n  // 3. Em caso de falha, resposta amigável e status seguro\n  parsed = { \n    resposta_para_usuario: \"Desculpe, estava processando uma informação. Poderia repetir o que você disse?\", \n    dados_extraidos: {}, \n    status_funil: \"Coletando Informações\", \n    encaminhar_para_consultor: false,\n    score_qualificacao: 0,\n    temperatura: \"Frio\",\n    resumo_sdr: \"\",\n    proxima_acao: \"Continuar qualificação\"\n  };\n}\n\nlet context = $('Preparar Contexto IA').first().json;\nlet historico = context.historico_array || [];\n\nhistorico.push({ role: \"user\", content: context.mensagem_atual });\nhistorico.push({ role: \"assistant\", content: parsed.resposta_para_usuario });\n\nlet updateData = Object.assign({}, context.lead_completo);\nupdateData.historico_mensagens = historico;\nupdateData.status_funil = parsed.status_funil || updateData.status_funil;\nupdateData.score_qualificacao = parsed.score_qualificacao || 0;\nupdateData.temperatura = parsed.temperatura || 'Frio';\nupdateData.encaminhar_para_consultor = parsed.encaminhar_para_consultor || false;\nupdateData.resumo_sdr = parsed.resumo_sdr || \"\";\nupdateData.proxima_acao = parsed.proxima_acao || \"Continuar qualificação\";\nupdateData.ultima_interacao = new Date().toISOString();\n\nif (parsed.dados_extraidos) {\n  updateData.orcamento = parsed.dados_extraidos.orcamento;\n  updateData.produto_interesse = parsed.dados_extraidos.produto_interesse;\n  if (parsed.dados_extraidos.regiao_interesse) updateData.regiao_interesse = parsed.dados_extraidos.regiao_interesse;\n  if (parsed.dados_extraidos.tipo_imovel) updateData.tipo_imovel = parsed.dados_extraidos.tipo_imovel;\n  if (parsed.dados_extraidos.renda_mensal) updateData.renda_mensal = parsed.dados_extraidos.renda_mensal;\n  if (parsed.dados_extraidos.valor_entrada) updateData.valor_entrada = parsed.dados_extraidos.valor_entrada;\n  if (parsed.dados_extraidos.prazo_compra) updateData.prazo_compra = parsed.dados_extraidos.prazo_compra;\n}\n\nreturn {\n  id: context.lead_id,\n  telefone: context.telefone,\n  lead_id: context.lead_id,\n  resposta_para_usuario: parsed.resposta_para_usuario,\n  deve_encaminhar_gerente: parsed.encaminhar_para_consultor,\n  updateData: updateData\n};"
-      },
-      "name": "Processar Resposta JSON",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        9728,
-        3248
-      ],
-      "id": "85c6ca7c-8b45-4c5f-b5ab-b615473520c9"
+      "id": "3fa2d46d-fb0f-4c8d-8a56-eb8969f217c2"
     },
     {
       "parameters": {
@@ -248,10 +317,6 @@
         },
         "fieldsUi": {
           "fieldValues": [
-            {
-              "fieldId": "historico_mensagens",
-              "fieldValue": "={{$json.updateData.historico_mensagens}}"
-            },
             {
               "fieldId": "status_funil",
               "fieldValue": "={{$json.updateData.status_funil}}"
@@ -319,11 +384,118 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        9920,
-        3248
+        14528,
+        4880
       ],
       "alwaysOutputData": true,
-      "id": "ca399029-4058-4432-a4e4-dc715dd34540",
+      "id": "1da6038d-d95f-4d85-ae3e-608643fee71c",
+      "credentials": {
+        "supabaseApi": {
+          "id": "3Hp4m3KaX23RwFHq",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Busca a resposta em todos os lugares possíveis (Gemini ou OpenAI)\nlet responseText = $json?.content?.parts?.[0]?.text || $json.text || ($json.message && $json.message.content) || \"\";\n\nlet parsed = {};\ntry {\n  // 2. Limpa formatações e tenta converter para JSON\n  let cleaned = responseText.replace(/^```(json)?/im, \"\").replace(/```$/im, \"\").trim();\n  parsed = JSON.parse(cleaned);\n} catch(e) {\n  // 3. Em caso de falha, resposta amigável e status seguro\n  parsed = { \n    resposta_para_usuario: \"Desculpe, estava processando uma informação. Poderia repetir o que você disse?\", \n    dados_extraidos: {}, \n    status_funil: \"Coletando Informações\", \n    encaminhar_para_consultor: false,\n    score_qualificacao: 0,\n    temperatura: \"Frio\",\n    resumo_sdr: \"\",\n    proxima_acao: \"Continuar qualificação\"\n  };\n}\n\nlet context = $('Preparar Contexto IA').first().json;\nlet historico = context.historico_array || [];\n\nhistorico.push({ role: \"user\", content: context.mensagem_atual });\nhistorico.push({ role: \"assistant\", content: parsed.resposta_para_usuario });\n\nlet updateData = Object.assign({}, context.lead_completo);\nupdateData.historico_mensagens = historico;\nupdateData.status_funil = parsed.status_funil || updateData.status_funil;\nupdateData.score_qualificacao = parsed.score_qualificacao || 0;\nupdateData.temperatura = parsed.temperatura || 'Frio';\nupdateData.encaminhar_para_consultor = parsed.encaminhar_para_consultor || false;\nupdateData.resumo_sdr = parsed.resumo_sdr || \"\";\nupdateData.proxima_acao = parsed.proxima_acao || \"Continuar qualificação\";\nupdateData.ultima_interacao = new Date().toISOString();\n\nif (parsed.dados_extraidos) {\n  updateData.orcamento = parsed.dados_extraidos.orcamento;\n  updateData.produto_interesse = parsed.dados_extraidos.produto_interesse;\n  if (parsed.dados_extraidos.regiao_interesse) updateData.regiao_interesse = parsed.dados_extraidos.regiao_interesse;\n  if (parsed.dados_extraidos.tipo_imovel) updateData.tipo_imovel = parsed.dados_extraidos.tipo_imovel;\n  if (parsed.dados_extraidos.renda_mensal) updateData.renda_mensal = parsed.dados_extraidos.renda_mensal;\n  if (parsed.dados_extraidos.valor_entrada) updateData.valor_entrada = parsed.dados_extraidos.valor_entrada;\n  if (parsed.dados_extraidos.prazo_compra) updateData.prazo_compra = parsed.dados_extraidos.prazo_compra;\n}\n\nreturn {\n  id: context.lead_id,\n  telefone: context.telefone,\n  lead_id: context.lead_id,\n  resposta_para_usuario: parsed.resposta_para_usuario,\n  deve_encaminhar_gerente: parsed.encaminhar_para_consultor,\n  updateData: updateData\n};"
+      },
+      "name": "Processar Resposta JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        14144,
+        4880
+      ],
+      "id": "6731bb11-0e06-4292-b519-e09fcb2c3af6"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Normalizar Texto\nconst normalize = (text) => {\n  if (!text) return \"\";\n  return text.toLowerCase()\n    .normalize('NFD')\n    .replace(/[\\u0300-\\u036f]/g, '');\n};\n\nconst payload = $('Normalizar Payload').first().json;\nconst mensagemOriginal = payload.mensagem || \"\";\nconst msg = normalize(mensagemOriginal);\n\nlet score = 0;\nlet dadosExtraidos = {\n  orcamento: null,\n  prazo_compra: null,\n  urgencia: \"baixa\",\n  forma_pagamento: null,\n  produto_interesse: null\n};\n\n// 1. Detectar Valores Monetários (Regex)\nconst moneyRegex = /(?:r\\$|rs|\\$)?\\s?(\\d+(?:[.,]\\d+)*)\\s?(mil|k|milhoes|m)?/gi;\nconst matchMoney = moneyRegex.exec(msg);\nif (matchMoney) {\n    let valorStr = matchMoney[1];\n    if (valorStr.includes('.') && valorStr.includes(',')) {\n        valorStr = valorStr.replace(/\\./g, '').replace(',', '.');\n    } else if (valorStr.includes(',')) {\n        valorStr = valorStr.replace(',', '.');\n    } else if (valorStr.includes('.') && valorStr.length > 3 && valorStr.split('.').pop().length === 3) {\n        valorStr = valorStr.replace(/\\./g, '');\n    }\n    \n    let valor = parseFloat(valorStr);\n    let sufixo = matchMoney[2] ? matchMoney[2].toLowerCase() : '';\n    if (sufixo === 'mil' || sufixo === 'k') valor *= 1000;\n    if (sufixo === 'milhoes' || sufixo === 'm') valor *= 1000000;\n    dadosExtraidos.orcamento = valor;\n    score += 20;\n} else if (msg.match(/tenho|possuo|disponho|orcamento|investir|entrada/)) {\n    score += 20;\n}\n\n// 2. Necessidade clara / Produto\nif (msg.match(/comprar|adquirir|contratar|fechar|agendar|apartamento|casa|imovel|unidade/)) {\n    score += 20;\n    if (msg.includes('apartamento')) dadosExtraidos.produto_interesse = 'Apartamento';\n    else if (msg.includes('casa')) dadosExtraidos.produto_interesse = 'Casa';\n}\n\n// 3. Prazo / Urgência\nif (msg.match(/hoje|agora|urgente|esta semana|este mes|imediatamente/)) {\n    score += 20;\n    dadosExtraidos.urgencia = \"alta\";\n    if (msg.includes('mes')) dadosExtraidos.prazo_compra = \"Este mês\";\n    if (msg.includes('semana')) dadosExtraidos.prazo_compra = \"Esta semana\";\n}\n\n// 4. Forma de Pagamento\nif (msg.match(/financiado|financiamento|a vista|consorcio|pagar/)) {\n    score += 20;\n    if (msg.includes('financiamento')) dadosExtraidos.forma_pagamento = \"Financiamento\";\n    else if (msg.includes('a vista')) dadosExtraidos.forma_pagamento = \"À vista\";\n}\n\n// 5. Interesse Alto\nif (msg.match(/quero comprar|tenho interesse|quero agendar|quero fechar|agendar visita|tenho urgencia/)) {\n    score += 20;\n}\n\nscore = Math.min(score, 100);\n\n// Atribuição de Temperatura e Status\nlet temperatura = \"Frio\";\nlet status_funil = \"Novo\";\n\nif (score >= 90) { temperatura = \"Pronto para Vendas\"; status_funil = \"Pronto para Vendas\"; }\nelse if (score >= 70) { temperatura = \"Quente\"; status_funil = \"Quente\"; }\nelse if (score >= 40) { temperatura = \"Morno\"; status_funil = \"Morno\"; }\nelse if (score > 0) { temperatura = \"Frio\"; status_funil = \"Coletando Informações\"; }\n\nconst encaminhar = (score >= 80 && (temperatura === \"Quente\" || temperatura === \"Pronto para Vendas\"));\nconst proximaAcao = encaminhar ? \"Encaminhar para consultor\" : \"Continuar qualificação\";\n\n// Respostas\nlet resposta = \"Olá! Será um prazer ajudar. Pode me contar um pouco mais sobre o que você está procurando?\";\nif (status_funil === \"Coletando Informações\" || status_funil === \"Morno\") {\n    resposta = \"Perfeito. Para entender melhor o seu perfil, poderia informar sua faixa de investimento e em quanto tempo pretende tomar a decisão?\";\n} else if (status_funil === \"Quente\") {\n    resposta = \"Excelente. Com base nas informações fornecidas, seu perfil está alinhado. Vou encaminhar seus dados para um consultor especializado.\";\n} else if (status_funil === \"Pronto para Vendas\") {\n    resposta = \"Ótimo! Seu interesse foi identificado como prioritário e seu atendimento será encaminhado ao consultor responsável.\";\n}\n\n// Resumo SDR\nlet resumo = `Lead interessado em ${dadosExtraidos.produto_interesse || 'imóvel'}.`;\nif (dadosExtraidos.orcamento) resumo += ` Orçamento: R$ ${dadosExtraidos.orcamento.toLocaleString('pt-BR')}.`;\nif (dadosExtraidos.prazo_compra) resumo += ` Prazo: ${dadosExtraidos.prazo_compra}.`;\n\nconst mockJson = {\n    resposta_para_usuario: resposta,\n    score_qualificacao: score,\n    temperatura: temperatura,\n    status_funil: status_funil,\n    encaminhar_para_consultor: encaminhar,\n    resumo_sdr: resumo,\n    dados_extraidos: dadosExtraidos,\n    proxima_acao: proximaAcao\n};\n\nreturn {\n  message: { content: JSON.stringify(mockJson, null, 2) }\n};"
+      },
+      "name": "Mock IA",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        13904,
+        4752
+      ],
+      "id": "0e14f126-a951-4907-9232-c7e752bc1b5c"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $('Normalizar Payload').first().json.IA_MODE }}",
+              "value2": "mock"
+            }
+          ]
+        }
+      },
+      "name": "Usar Mock IA?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        13584,
+        4864
+      ],
+      "notesInFlow": true,
+      "id": "ecbb0e21-99aa-4e0e-956c-bb3ee80f7d31",
+      "notes": "Mude para FALSE para usar a OpenAI real"
+    },
+    {
+      "parameters": {
+        "jsCode": "let payload = $('Normalizar Payload').first().json;\nlet lead = $('Juntar Fluxos').first().json; \n\n// Puxa o histórico do banco de dados (se estiver vazio, cria array em branco)\nlet mensagens_bd = $('Buscar Histórico de Mensagens').all() || [];\n\n// Garante que o histórico fique na ordem cronológica correta\nmensagens_bd.sort((a, b) => new Date(a.json.created_at) - new Date(b.json.created_at));\n\n// Monta o texto em formato de \"Chat\" para a IA ler\nlet historyText = mensagens_bd.map(msg => {\n    let remetente = msg.json.sender === 'client' ? 'Cliente' : 'SDR';\n    return `${remetente}: ${msg.json.content}`;\n}).join(\"\\n\");\n\nif (!historyText) historyText = \"Nenhuma interação anterior.\";\n\n// Identifica quais campos importantes ainda faltam preencher para a IA focar neles\nlet missingFields = [];\nif (!lead.regiao_interesse) missingFields.push(\"regiao_interesse\");\nif (!lead.tipo_imovel) missingFields.push(\"tipo_imovel\");\nif (!lead.renda_mensal) missingFields.push(\"renda_mensal\");\nif (!lead.valor_entrada) missingFields.push(\"valor_entrada\");\nif (!lead.prazo_compra) missingFields.push(\"prazo_compra\");\n\n// Prepara um array estruturado caso queira passar o histórico limpo para os próximos nós\nlet historicoArray = mensagens_bd.map(msg => ({\n  role: msg.json.sender === 'client' ? 'user' : 'assistant',\n  content: msg.json.content\n}));\n\n// Retorna tudo empacotado para uso da IA\nreturn {\n  telefone: payload.telefone,\n  lead_id: lead.id,\n  nome: lead.nome || payload.nome,\n  mensagem_atual: payload.mensagem,\n  historico_texto: historyText,\n  historico_array: historicoArray,\n  status_atual: lead.status_funil || 'Novo',\n  campos_faltantes: missingFields.join(\", \"),\n  lead_completo: lead\n};\n"
+      },
+      "name": "Preparar Contexto IA",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        13424,
+        4864
+      ],
+      "id": "c882ed02-f975-4372-acad-61f667fe97ce"
+    },
+    {
+      "parameters": {},
+      "name": "Juntar Fluxos",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        12928,
+        4864
+      ],
+      "id": "ebdb33bb-d753-48f9-88dd-598dc8a97b30"
+    },
+    {
+      "parameters": {
+        "tableId": "leads",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "telefone",
+              "fieldValue": "={{ $('Normalizar Payload').first().json.telefone }}"
+            },
+            {
+              "fieldId": "nome",
+              "fieldValue": "={{ $('Normalizar Payload').first().json.nome }}"
+            },
+            {
+              "fieldId": "historico_mensagens",
+              "fieldValue": "=[]"
+            }
+          ]
+        }
+      },
+      "name": "Criar Novo Lead",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        12768,
+        4736
+      ],
+      "id": "4b119cf7-f4ab-4a2b-8154-11bb32197ce1",
       "credentials": {
         "supabaseApi": {
           "id": "3Hp4m3KaX23RwFHq",
@@ -334,27 +506,53 @@
     {
       "parameters": {
         "conditions": {
-          "boolean": [
+          "string": [
             {
-              "value1": "={{ $('Processar Resposta JSON').first().json.updateData.score_qualificacao }}",
-              "operation": "largerEqual",
-              "value2": 80
-            },
-            {
-              "value1": "={{ $('Processar Resposta JSON').first().json.updateData.encaminhar_para_consultor }}",
-              "value2": true
+              "value1": "={{$json.id}}",
+              "operation": "isEmpty"
             }
           ]
         }
       },
-      "name": "Precisa de Gerente?",
+      "name": "Novo Lead?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        10736,
-        3248
+        12576,
+        4864
       ],
-      "id": "2fb54bf9-234a-454a-9afc-7358dc30f5ab"
+      "id": "8871536a-4fcf-4afc-8b07-dfb504d0a497"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "leads",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "telefone",
+              "condition": "eq",
+              "keyValue": "={{$json.telefone}}"
+            }
+          ]
+        }
+      },
+      "name": "Consultar Lead",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        12368,
+        4864
+      ],
+      "alwaysOutputData": true,
+      "id": "7f34eaea-2046-47bb-9873-91331370d3d3",
+      "credentials": {
+        "supabaseApi": {
+          "id": "3Hp4m3KaX23RwFHq",
+          "name": "Supabase account 2"
+        }
+      }
     },
     {
       "parameters": {
@@ -362,284 +560,78 @@
         "values": {
           "string": [
             {
-              "name": "mensagem_para_cliente",
-              "value": "={{ $json.mensagem_para_cliente }}"
+              "name": "AMBIENTE",
+              "value": "teste"
             },
             {
-              "name": "alerta_gerente",
-              "value": "={{ $json.alerta_gerente }}"
+              "name": "IA_MODE",
+              "value": "real"
             },
             {
-              "name": "debug_ia_usada",
-              "value": "={{ $json.debug_ia_usada }}"
+              "name": "telefone",
+              "value": "={{ $json.body?.telefone || $json.telefone || $json.body?.from || $json.from }}"
             },
             {
-              "name": "debug_status_funil",
-              "value": "={{ $json.debug_status_funil }}"
+              "name": "mensagem",
+              "value": "={{ $json.body?.mensagem || $json.mensagem || $json.body?.text || $json.text }}"
             },
             {
-              "name": "mock_whatsapp_gerente",
-              "value": "==🚨 *NOVO LEAD QUALIFICADO* 🚨\n\n👤 *Nome:* {{ $('Atualizar Lead (Supabase)').first().json.nome }}\n📞 *Telefone:* {{ $('Atualizar Lead (Supabase)').first().json.telefone }}\n\n🔥 *Temperatura:* {{ $('Atualizar Lead (Supabase)').first().json.temperatura }}\n📊 *Score:* {{ $('Atualizar Lead (Supabase)').first().json.score_qualificacao }}/100\n\n💡 *Resumo da IA (SDR):*\n{{ $('Atualizar Lead (Supabase)').first().json.resumo_sdr }}\n\n💰 *Dados do Lead:*\n- Interesse: {{ $('Atualizar Lead (Supabase)').first().json.produto_interesse || 'Não informado' }}\n- Orçamento: R$ {{ $('Atualizar Lead (Supabase)').first().json.orcamento || 'Não informado' }}\n- Entrada: R$ {{ $('Atualizar Lead (Supabase)').first().json.valor_entrada || 'Não informada' }}\n- Região: {{ $('Atualizar Lead (Supabase)').first().json.regiao_interesse || 'Não informada' }}\n\n💬 *Última mensagem do lead:*\n\"{{ $('Normalizar Payload').first().json.mensagem }}\"\n"
+              "name": "nome",
+              "value": "={{ $json.body?.nome || $json.nome || $json.body?.senderName || $json.senderName }}"
+            },
+            {
+              "name": "WHATSAPP_API_URL",
+              "value": "https://httpbin.org"
+            },
+            {
+              "name": "WHATSAPP_API_TOKEN",
+              "value": "preencher_depois"
+            },
+            {
+              "name": "WHATSAPP_INSTANCE",
+              "value": "adao-imoveis"
+            },
+            {
+              "name": "GERENTE_TELEFONE",
+              "value": "55XXXXXXXXXXX"
+            },
+            {
+              "name": "WHATSAPP_ENDPOINT",
+              "value": "/post"
             }
           ]
         },
         "options": {}
       },
-      "name": "Notificar Gerente (Mock)",
+      "name": "Normalizar Payload",
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        10944,
-        3232
+        12176,
+        4864
       ],
-      "id": "5ac3bb52-8a25-4b7f-81ae-8b98271bccce"
+      "id": "ec14ec87-a37a-4a3d-a05f-80d98cd96df1"
     },
     {
-      "parameters": {},
-      "name": "Bypass (Sem Alerta)",
-      "type": "n8n-nodes-base.noOp",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead-webhook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Webhook Entrada",
+      "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        10944,
-        3440
+        11968,
+        4864
       ],
-      "id": "f0449692-3e2f-4527-b114-8ad362fb05fc"
-    },
-    {
-      "parameters": {
-        "jsCode": "const ambiente = $('Normalizar Payload').first().json.AMBIENTE || 'producao';\nconst resposta = $('Processar Resposta JSON').first().json.resposta_para_usuario;\nconst status_funil = $('Atualizar Lead (Supabase)').first().json.status_funil;\nconst ia_mode = $('Normalizar Payload').first().json.IA_MODE;\n\nlet result = {\n  resposta_para_usuario: resposta,\n  status: status_funil\n};\n\nif (ambiente === 'teste') {\n  result.debug_ia_usada = ia_mode;\n  result.debug_status_funil = status_funil;\n}\n\nreturn result;"
-      },
-      "name": "Preparar Resposta Cliente",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        10128,
-        3248
-      ],
-      "id": "1373613e-90a3-40b5-845a-ee1c405fb453"
-    },
-    {
-      "parameters": {
-        "options": {}
-      },
-      "name": "Respond to Webhook",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1,
-      "position": [
-        10336,
-        3248
-      ],
-      "id": "9b14d545-65ef-455c-a4c3-dd12342a916a"
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "={{ $('Normalizar Payload').first().json.WHATSAPP_API_URL }}{{ $('Normalizar Payload').first().json.WHATSAPP_ENDPOINT }}",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "apikey",
-              "value": "={{ $('Normalizar Payload').first().json.WHATSAPP_API_TOKEN }}"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n  \"number\": \"{{ $('Normalizar Payload').first().json.telefone }}\",\n  \"options\": {\n    \"delay\": 1200,\n    \"presence\": \"composing\"\n  },\n  \"textMessage\": {\n    \"text\": {{ JSON.stringify($('Preparar Resposta Cliente').first().json.resposta_para_usuario) }}\n  }\n}",
-        "options": {}
-      },
-      "id": "5b7136f3-9b46-4c17-adb0-6de9188a1c63",
-      "name": "Enviar WhatsApp Cliente",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.1,
-      "position": [
-        4336,
-        1472
-      ],
-      "notesInFlow": true,
-      "continueOnFail": true,
-      "notes": "Tratamento de Erro ativado (Continue On Fail)"
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "={{ $('Normalizar Payload').first().json.WHATSAPP_API_URL }}{{ $('Normalizar Payload').first().json.WHATSAPP_ENDPOINT }}",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "apikey",
-              "value": "={{ $('Normalizar Payload').first().json.WHATSAPP_API_TOKEN }}"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n  \"number\": \"{{ $('Normalizar Payload').first().json.GERENTE_TELEFONE }}\",\n  \"options\": {\n    \"delay\": 1200,\n    \"presence\": \"composing\"\n  },\n  \"textMessage\": {\n    \"text\": {{ JSON.stringify($('Notificar Gerente (Mock)').first().json.mock_whatsapp_gerente) }}\n  }\n}",
-        "options": {}
-      },
-      "id": "154f8981-81b9-4881-8c3c-aa0cc1229021",
-      "name": "Enviar WhatsApp Gerente",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.1,
-      "position": [
-        4736,
-        1568
-      ],
-      "notesInFlow": true,
-      "continueOnFail": true,
-      "notes": "Tratamento de Erro ativado (Continue On Fail)"
-    },
-    {
-      "parameters": {
-        "modelId": {
-          "__rl": true,
-          "value": "models/gemini-3.5-flash",
-          "mode": "list",
-          "cachedResultName": "models/gemini-3.5-flash"
-        },
-        "messages": {
-          "values": [
-            {
-              "content": "=Você é um SDR (Sales Development Representative) imobiliário de alta performance. Seu tom é profissional, empático, direto e persuasivo. NUNCA peça desculpas excessivas.\nSua missão é extrair dados, qualificar o lead e gerar a próxima resposta, retornando EXCLUSIVAMENTE um objeto JSON válido.\n\nRegras de Comportamento:\n1. Faça APENAS UMA pergunta por vez para não cansar o lead.\n2. Se o lead já passou informações suficientes (Orçamento e Região ou Orçamento e Produto) e o score passar de 80, o status deve ser \"Quente\" ou \"Pronto para Vendas\" e encaminhar_para_consultor DEVE ser true.\n3. Se encaminhar_para_consultor for true, sua resposta_para_usuario DEVE ser uma mensagem de transição (ex: \"Perfeito! Seu perfil está ótimo. Vou acionar nosso corretor especialista na região para te chamar agora mesmo com as opções disponíveis.\").\n\nEstrutura do JSON exigida:\n{\n  \"resposta_para_usuario\": \"Sua resposta humanizada e natural como SDR.\",\n  \"status_funil\": \"Novo\" | \"Coletando Informações\" | \"Morno\" | \"Quente\" | \"Pronto para Vendas\",\n  \"score_qualificacao\": número de 0 a 100,\n  \"temperatura\": \"Frio\" | \"Morno\" | \"Quente\" | \"Pronto para Vendas\",\n  \"encaminhar_para_consultor\": boolean,\n  \"proxima_acao\": \"Continuar qualificação\" ou \"Encaminhar para consultor\",\n  \"resumo_sdr\": \"Resumo executivo contendo o que o lead quer e o orçamento.\",\n  \"dados_extraidos\": {\n    \"orcamento\": número ou null,\n    \"produto_interesse\": \"string\" ou null,\n    \"regiao_interesse\": \"string\" ou null,\n    \"tipo_imovel\": \"string\" ou null,\n    \"valor_entrada\": número ou null,\n    \"prazo_compra\": \"string\" ou null\n  }\n}\n\nHistórico da Conversa:\n{{ $('Preparar Contexto IA').first().json.historico_texto }}\n\nÚltima Mensagem do Cliente:\n{{ $('Preparar Contexto IA').first().json.mensagem_atual }}\n"
-            }
-          ]
-        },
-        "builtInTools": {},
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.googleGemini",
-      "typeVersion": 1.2,
-      "position": [
-        9312,
-        3264
-      ],
-      "id": "995cb633-9d55-4fc7-96f8-4694ce1fc5c6",
-      "name": "Message a model",
-      "credentials": {
-        "googlePalmApi": {
-          "id": "2BXU3rUDkK69jCwT",
-          "name": "Google Gemini(PaLM) Api account"
-        }
-      }
+      "id": "31abbee6-0eba-4eb6-9b8a-ae42ed3b19b6",
+      "webhookId": "bd21ec3b-62f4-417d-b06c-650f1e6645ec"
     }
   ],
   "connections": {
-    "Webhook Entrada": {
-      "main": [
-        [
-          {
-            "node": "Normalizar Payload",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Normalizar Payload": {
-      "main": [
-        [
-          {
-            "node": "Consultar Lead",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Consultar Lead": {
-      "main": [
-        [
-          {
-            "node": "Novo Lead?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Novo Lead?": {
-      "main": [
-        [
-          {
-            "node": "Criar Novo Lead",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Juntar Fluxos",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Criar Novo Lead": {
-      "main": [
-        [
-          {
-            "node": "Juntar Fluxos",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Juntar Fluxos": {
-      "main": [
-        [
-          {
-            "node": "Preparar Contexto IA",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Preparar Contexto IA": {
-      "main": [
-        [
-          {
-            "node": "Usar Mock IA?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Usar Mock IA?": {
-      "main": [
-        [
-          {
-            "node": "Mock IA",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Message a model",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Mock IA": {
-      "main": [
-        [
-          {
-            "node": "Processar Resposta JSON",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Processar Resposta JSON": {
+    "Salvar Resposta da IA": {
       "main": [
         [
           {
@@ -650,11 +642,77 @@
         ]
       ]
     },
-    "Atualizar Lead (Supabase)": {
+    "Buscar Histórico de Mensagens": {
       "main": [
         [
           {
-            "node": "Preparar Resposta Cliente",
+            "node": "Preparar Contexto IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Salvar Mensagem do Cliente": {
+      "main": [
+        [
+          {
+            "node": "Buscar Histórico de Mensagens",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Processar Resposta JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar WhatsApp Cliente": {
+      "main": [
+        [
+          {
+            "node": "Precisa de Gerente?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Webhook": {
+      "main": [
+        [
+          {
+            "node": "Enviar WhatsApp Cliente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Resposta Cliente": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notificar Gerente (Mock)": {
+      "main": [
+        [
+          {
+            "node": "Enviar WhatsApp Gerente",
             "type": "main",
             "index": 0
           }
@@ -679,55 +737,135 @@
         ]
       ]
     },
-    "Notificar Gerente (Mock)": {
+    "Atualizar Lead (Supabase)": {
       "main": [
         [
           {
-            "node": "Enviar WhatsApp Gerente",
+            "node": "Preparar Resposta Cliente",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Preparar Resposta Cliente": {
+    "Processar Resposta JSON": {
       "main": [
         [
           {
-            "node": "Respond to Webhook",
+            "node": "Salvar Resposta da IA",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Respond to Webhook": {
-      "main": [
-        [
-          {
-            "node": "Enviar WhatsApp Cliente",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Enviar WhatsApp Cliente": {
-      "main": [
-        [
-          {
-            "node": "Precisa de Gerente?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Message a model": {
+    "Mock IA": {
       "main": [
         [
           {
             "node": "Processar Resposta JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Usar Mock IA?": {
+      "main": [
+        [
+          {
+            "node": "Mock IA",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Contexto IA": {
+      "main": [
+        [
+          {
+            "node": "Usar Mock IA?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Juntar Fluxos": {
+      "main": [
+        [
+          {
+            "node": "Salvar Mensagem do Cliente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Criar Novo Lead": {
+      "main": [
+        [
+          {
+            "node": "Juntar Fluxos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Novo Lead?": {
+      "main": [
+        [
+          {
+            "node": "Criar Novo Lead",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Juntar Fluxos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar Lead": {
+      "main": [
+        [
+          {
+            "node": "Novo Lead?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar Payload": {
+      "main": [
+        [
+          {
+            "node": "Consultar Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Entrada": {
+      "main": [
+        [
+          {
+            "node": "Normalizar Payload",
             "type": "main",
             "index": 0
           }
