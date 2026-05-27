@@ -7,7 +7,10 @@ const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function run() {
-  const { data, error } = await supabase.from('leads').select('id, nome, telefone, created_at');
+  const { data, error } = await supabase
+    .from('leads')
+    .select('id, nome, telefone, created_at')
+    .order('created_at', { ascending: true });
   if (error) {
     console.error('Error fetching leads:', error);
     return;

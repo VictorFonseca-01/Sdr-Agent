@@ -27,10 +27,11 @@ export default function SlideOutPanel({ lead, timeline, onClose, onOpenWhatsApp,
           width: '100%',
           maxWidth: '500px',
           height: '100vh',
-          background: 'rgba(10, 10, 12, 0.95)',
+          height: '100vh',
+          background: 'var(--bg-card)',
           backdropFilter: 'blur(20px)',
-          borderLeft: '1px solid var(--border-glass)',
-          boxShadow: '-10px 0 30px rgba(0,0,0,0.5)',
+          borderLeft: '1px solid var(--border-color)',
+          boxShadow: '-10px 0 30px rgba(0,0,0,0.15)',
           zIndex: 1000,
           display: 'flex',
           flexDirection: 'column',
@@ -38,9 +39,9 @@ export default function SlideOutPanel({ lead, timeline, onClose, onOpenWhatsApp,
         }}
       >
         {/* Header */}
-        <div style={{ padding: '24px', borderBottom: '1px solid var(--border-glass)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: '800', color: 'white', marginBottom: '8px' }}>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--text-main)', marginBottom: '8px' }}>
               {lead.nome || 'Lead Sem Nome'}
             </h2>
             <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
@@ -48,7 +49,7 @@ export default function SlideOutPanel({ lead, timeline, onClose, onOpenWhatsApp,
                 <Phone size={14} /> {lead.telefone}
               </span>
               {lead.score_qualificacao && (
-                <span style={{ fontSize: '0.8rem', background: 'rgba(139, 92, 246, 0.2)', color: '#c4b5fd', padding: '2px 8px', borderRadius: '12px', fontWeight: 'bold' }}>
+                <span style={{ fontSize: '0.8rem', background: 'rgba(139, 92, 246, 0.1)', color: 'var(--primary)', padding: '2px 8px', borderRadius: '12px', fontWeight: 'bold' }}>
                   Score: {lead.score_qualificacao}%
                 </span>
               )}
@@ -56,9 +57,9 @@ export default function SlideOutPanel({ lead, timeline, onClose, onOpenWhatsApp,
           </div>
           <button 
             onClick={onClose}
-            style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'background 0.2s' }}
-            onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
-            onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+            style={{ background: 'var(--border-color)', border: 'none', color: 'var(--text-main)', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'background 0.2s' }}
+            onMouseOver={(e) => e.currentTarget.style.background = 'var(--text-muted)'}
+            onMouseOut={(e) => e.currentTarget.style.background = 'var(--border-color)'}
           >
             <X size={20} />
           </button>
@@ -95,13 +96,13 @@ export default function SlideOutPanel({ lead, timeline, onClose, onOpenWhatsApp,
               <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Briefcase size={14} /> Produto/Interesse
               </div>
-              <div style={{ fontWeight: 'bold', color: 'white' }}>{lead.produto_interesse || 'Não informado'}</div>
+              <div style={{ fontWeight: 'bold', color: 'var(--text-main)' }}>{lead.produto_interesse || 'Não informado'}</div>
             </div>
             <div className="glass-card" style={{ padding: '16px' }}>
               <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Target size={14} /> Orçamento
               </div>
-              <div style={{ fontWeight: 'bold', color: '#10b981' }}>{lead.orcamento || 'Não informado'}</div>
+              <div style={{ fontWeight: 'bold', color: 'var(--status-pronto)' }}>{lead.orcamento || 'Não informado'}</div>
             </div>
           </div>
 
@@ -113,14 +114,14 @@ export default function SlideOutPanel({ lead, timeline, onClose, onOpenWhatsApp,
              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '0.9rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Perfil Psicológico:</span>
-                  <span style={{ fontWeight: 'bold', color: '#fcd34d' }}>{lead.perfil_psicologico || 'Analisando...'}</span>
+                  <span style={{ fontWeight: 'bold', color: 'var(--secondary)' }}>{lead.perfil_psicologico || 'Analisando...'}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Urgência:</span>
-                  <span style={{ fontWeight: 'bold', color: lead.nivel_urgencia === 'Alta' ? '#ef4444' : '#fca5a5' }}>{lead.nivel_urgencia || 'Não definida'}</span>
+                  <span style={{ fontWeight: 'bold', color: lead.nivel_urgencia === 'Alta' ? 'var(--status-perdido)' : 'var(--status-quente)' }}>{lead.nivel_urgencia || 'Não definida'}</span>
                 </div>
                 {lead.tom_recomendado_ia && (
-                  <div style={{ marginTop: '8px', padding: '12px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', borderLeft: '3px solid var(--primary)' }}>
+                  <div style={{ marginTop: '8px', padding: '12px', background: 'var(--bg-body)', borderRadius: '8px', borderLeft: '3px solid var(--primary)' }}>
                     <strong>Abordagem Recomendada:</strong> {lead.tom_recomendado_ia}
                   </div>
                 )}
@@ -129,7 +130,7 @@ export default function SlideOutPanel({ lead, timeline, onClose, onOpenWhatsApp,
 
           {/* Resumo SDR */}
           <div className="glass-card" style={{ padding: '20px' }}>
-             <h3 style={{ fontSize: '1rem', color: '#0ea5e9', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+             <h3 style={{ fontSize: '1rem', color: 'var(--status-morno)', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                <Target size={18} /> Resumo do Atendimento
              </h3>
              <p style={{ fontSize: '0.9rem', lineHeight: '1.6', color: 'var(--text-main)' }}>
@@ -139,7 +140,7 @@ export default function SlideOutPanel({ lead, timeline, onClose, onOpenWhatsApp,
 
           {/* Timeline de Mensagens */}
           <div>
-            <h3 style={{ fontSize: '1rem', color: 'white', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+            <h3 style={{ fontSize: '1rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
               <MessageSquare size={18} /> Histórico de Chat
             </h3>
             <div style={{ 
@@ -147,9 +148,9 @@ export default function SlideOutPanel({ lead, timeline, onClose, onOpenWhatsApp,
               flexDirection: 'column', 
               gap: '12px', 
               padding: '16px',
-              background: 'rgba(0,0,0,0.4)',
+              background: 'var(--bg-body)',
               borderRadius: '12px',
-              border: '1px solid rgba(255,255,255,0.05)'
+              border: '1px solid var(--border-color)'
             }}>
               {!timeline ? (
                 <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center', padding: '20px 0' }}>
@@ -164,7 +165,7 @@ export default function SlideOutPanel({ lead, timeline, onClose, onOpenWhatsApp,
                 timeline.map((item, i) => {
                   if (item.type === 'event') {
                     return (
-                      <div key={'evt-'+i} style={{ fontSize: '0.75rem', padding: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '6px', color: 'var(--text-muted)', textAlign: 'center', margin: '8px 0' }}>
+                      <div key={'evt-'+i} style={{ fontSize: '0.75rem', padding: '6px', background: 'var(--border-color)', borderRadius: '6px', color: 'var(--text-muted)', textAlign: 'center', margin: '8px 0' }}>
                         {item.description} - {new Date(item.created_at).toLocaleDateString('pt-BR')}
                       </div>
                     );
@@ -174,8 +175,8 @@ export default function SlideOutPanel({ lead, timeline, onClose, onOpenWhatsApp,
                   return (
                     <div key={'msg-'+i} style={{ 
                       alignSelf: isClient ? 'flex-end' : 'flex-start',
-                      background: isClient ? 'var(--primary)' : 'rgba(255,255,255,0.1)',
-                      color: 'white',
+                      background: isClient ? 'var(--primary)' : 'var(--bg-card)',
+                      color: isClient ? 'white' : 'var(--text-main)',
                       padding: '12px 16px',
                       borderRadius: '16px',
                       borderBottomRightRadius: isClient ? '4px' : '16px',
@@ -183,10 +184,11 @@ export default function SlideOutPanel({ lead, timeline, onClose, onOpenWhatsApp,
                       maxWidth: '90%',
                       fontSize: '0.95rem',
                       lineHeight: '1.4',
-                      boxShadow: '0 4px 10px rgba(0,0,0,0.2)'
+                      border: isClient ? 'none' : '1px solid var(--border-color)',
+                      boxShadow: 'var(--shadow-sm)'
                     }}>
                       {item.content}
-                      <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.6)', marginTop: '8px', textAlign: isClient ? 'right' : 'left' }}>
+                      <div style={{ fontSize: '0.7rem', color: isClient ? 'rgba(255,255,255,0.8)' : 'var(--text-muted)', marginTop: '8px', textAlign: isClient ? 'right' : 'left' }}>
                         {new Date(item.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                         {!isClient && ' • SDR IA'}
                       </div>

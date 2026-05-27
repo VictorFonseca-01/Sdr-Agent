@@ -21,8 +21,8 @@ export default function MetricsCards({
           position: 'relative',
           cursor: 'pointer',
           transition: 'all 0.3s ease',
-          border: filterStatus === 'all' ? '2px solid var(--primary)' : '1px solid var(--border-glass)',
-          boxShadow: filterStatus === 'all' ? '0 0 15px rgba(139, 92, 246, 0.4)' : '',
+          border: filterStatus === 'all' ? '2px solid var(--primary)' : '1px solid var(--border-color)',
+          background: filterStatus === 'all' ? 'rgba(30, 58, 138, 0.05)' : 'var(--bg-card)',
           transform: filterStatus === 'all' ? 'scale(1.02)' : 'none'
         }}
       >
@@ -43,14 +43,14 @@ export default function MetricsCards({
           position: 'relative',
           cursor: 'pointer',
           transition: 'all 0.3s ease',
-          border: filterStatus === 'qualificar' ? '2px solid #0ea5e9' : '1px solid var(--border-glass)',
-          boxShadow: filterStatus === 'qualificar' ? '0 0 15px rgba(14, 165, 233, 0.4)' : '',
+          border: filterStatus === 'qualificar' ? '2px solid var(--status-morno)' : '1px solid var(--border-color)',
+          background: filterStatus === 'qualificar' ? 'rgba(2, 132, 199, 0.05)' : 'var(--bg-card)',
           transform: filterStatus === 'qualificar' ? 'scale(1.02)' : 'none'
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-          <MessageSquare style={{ color: '#0ea5e9' }} />
-          <span style={{ fontSize: '0.8rem', color: '#0ea5e9', fontWeight: 'bold' }}>Aguardando</span>
+          <MessageSquare style={{ color: 'var(--status-morno)' }} />
+          <span style={{ fontSize: '0.8rem', color: 'var(--status-morno)', fontWeight: 'bold' }}>Aguardando</span>
         </div>
         <h3 style={{ fontSize: '1.5rem', fontWeight: '700' }}>{qualificarLeads.length}</h3>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Leads para Qualificar</p>
@@ -65,14 +65,14 @@ export default function MetricsCards({
           position: 'relative',
           cursor: 'pointer',
           transition: 'all 0.3s ease',
-          border: filterStatus === 'quente' ? '2px solid #f59e0b' : '1px solid var(--border-glass)',
-          boxShadow: filterStatus === 'quente' ? '0 0 15px rgba(245, 158, 11, 0.4)' : '',
+          border: filterStatus === 'quente' ? '2px solid var(--status-quente)' : '1px solid var(--border-color)',
+          background: filterStatus === 'quente' ? 'rgba(234, 88, 12, 0.05)' : 'var(--bg-card)',
           transform: filterStatus === 'quente' ? 'scale(1.02)' : 'none'
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-          <TrendingUp style={{ color: '#f59e0b' }} />
-          <span style={{ fontSize: '0.8rem', color: '#f59e0b', fontWeight: 'bold' }}>Oportunidade</span>
+          <TrendingUp style={{ color: 'var(--status-quente)' }} />
+          <span style={{ fontSize: '0.8rem', color: 'var(--status-quente)', fontWeight: 'bold' }}>Oportunidade</span>
         </div>
         <h3 style={{ fontSize: '1.5rem', fontWeight: '700' }}>{quentesLeads.length}</h3>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Leads Quentes</p>
@@ -87,14 +87,14 @@ export default function MetricsCards({
           position: 'relative',
           cursor: 'pointer',
           transition: 'all 0.3s ease',
-          border: filterStatus === 'pronto' ? '2px solid #10b981' : '1px solid var(--border-glass)',
-          boxShadow: filterStatus === 'pronto' ? '0 0 15px rgba(16, 185, 129, 0.4)' : '',
+          border: filterStatus === 'pronto' ? '2px solid var(--status-pronto)' : '1px solid var(--border-color)',
+          background: filterStatus === 'pronto' ? 'rgba(5, 150, 105, 0.05)' : 'var(--bg-card)',
           transform: filterStatus === 'pronto' ? 'scale(1.02)' : 'none'
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-          <UserCheck style={{ color: '#10b981' }} />
-          <span style={{ fontSize: '0.8rem', color: '#10b981', fontWeight: 'bold' }}>Faturamento</span>
+          <UserCheck style={{ color: 'var(--status-pronto)' }} />
+          <span style={{ fontSize: '0.8rem', color: 'var(--status-pronto)', fontWeight: 'bold' }}>Faturamento</span>
         </div>
         <h3 style={{ fontSize: '1.5rem', fontWeight: '700' }}>{prontosLeads.length}</h3>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Prontos para Venda</p>
@@ -109,14 +109,14 @@ export default function MetricsCards({
           position: 'relative',
           cursor: 'pointer',
           transition: 'all 0.3s ease',
-          border: filterStatus === 'perdido' ? '2px solid #ef4444' : '1px solid var(--border-glass)',
-          boxShadow: filterStatus === 'perdido' ? '0 0 15px rgba(239, 68, 68, 0.4)' : '',
+          border: filterStatus === 'perdido' ? '2px solid var(--status-perdido)' : '1px solid var(--border-color)',
+          background: filterStatus === 'perdido' ? 'rgba(220, 38, 38, 0.05)' : 'var(--bg-card)',
           transform: filterStatus === 'perdido' ? 'scale(1.02)' : 'none'
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-          <UserX style={{ color: '#ef4444' }} />
-          <span style={{ fontSize: '0.8rem', color: '#ef4444', fontWeight: 'bold' }}>Atenção</span>
+          <UserX style={{ color: 'var(--status-perdido)' }} />
+          <span style={{ fontSize: '0.8rem', color: 'var(--status-perdido)', fontWeight: 'bold' }}>Atenção</span>
         </div>
         <h3 style={{ fontSize: '1.5rem', fontWeight: '700' }}>{perdidosLeads.length}</h3>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Leads Perdidos</p>
